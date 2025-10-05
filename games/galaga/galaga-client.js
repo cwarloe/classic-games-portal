@@ -93,6 +93,7 @@ function update() {
     if (keys[' '] && fireTimer === 0) {
         bullets.push({ x: player.x + 10, y: player.y, speed: 8 });
         fireTimer = 15;
+        sound.play('shoot');
     }
 
     // Update bullets
@@ -173,6 +174,7 @@ function update() {
                 enemies.splice(eIdx, 1);
                 score += enemy.points;
                 scoreEl.textContent = `Score: ${score}`;
+                sound.play('explosion');
             }
         });
     });
@@ -184,10 +186,12 @@ function update() {
             enemyBullets.splice(idx, 1);
             lives--;
             livesEl.textContent = `Lives: ${lives}`;
+            sound.play('hit');
             if (lives <= 0) {
                 gameOver = true;
                 statusEl.textContent = 'GAME OVER - Press R to restart';
                 statusEl.classList.add('disconnected');
+                sound.play('death');
             }
         }
     });

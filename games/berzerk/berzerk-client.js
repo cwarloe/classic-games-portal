@@ -158,6 +158,7 @@ function update() {
             fromPlayer: true
         });
         fireTimer = 20;
+        sound.play('shoot');
     }
 
     // Check exit collision
@@ -266,6 +267,7 @@ function update() {
                     robots.splice(i, 1);
                     score += 50;
                     scoreEl.textContent = `Score: ${score}`;
+                    sound.play('explosion');
                     return false;
                 }
             }
@@ -277,10 +279,12 @@ function update() {
             livesEl.textContent = `Lives: ${lives}`;
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
+            sound.play('hit');
             if (lives <= 0) {
                 gameOver = true;
                 statusEl.textContent = 'GAME OVER - Press R to restart';
                 statusEl.classList.add('disconnected');
+                sound.play('death');
             }
             return false;
         }

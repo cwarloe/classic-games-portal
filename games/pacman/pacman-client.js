@@ -168,6 +168,7 @@ function update() {
             pellets.splice(i, 1);
             score += 10;
             scoreEl.textContent = `Score: ${score}`;
+            sound.play('blip');
         }
     }
 
@@ -178,6 +179,7 @@ function update() {
             scoreEl.textContent = `Score: ${score}`;
             powerMode = true;
             powerTimer = 300;
+            sound.play('powerup');
         }
     }
 
@@ -258,16 +260,19 @@ function update() {
                 scoreEl.textContent = `Score: ${score}`;
                 ghost.x = 13 + idx % 2;
                 ghost.y = 13;
+                sound.play('coin');
             } else {
                 // Lose life
                 lives--;
                 livesEl.textContent = `Lives: ${lives}`;
                 player.x = 14;
                 player.y = 23;
+                sound.play('hit');
                 if (lives <= 0) {
                     gameOver = true;
                     statusEl.textContent = 'GAME OVER - Press R to restart';
                     statusEl.classList.add('disconnected');
+                    sound.play('death');
                 }
             }
         }
