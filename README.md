@@ -1,7 +1,18 @@
 # Classic Games Portal
 
-A simple, data‑driven portal for classic web games (Asteroids, Pac‑Man, Galaga, Berzerk, …).  
-Multiplayer Asteroids uses Node.js + Express + WebSocket.
+🎮 **A retro arcade game portal featuring 7 classic games with authentic sounds and gameplay!**
+
+## Games Included
+
+- 🚀 **Asteroids** (Multiplayer) - Classic space shooter with asteroid splitting and physics
+- 👾 **Space Invaders** - Alien invasion with destructible bunkers and formations
+- 🐸 **Frogger** - Navigate traffic and rivers to reach home safely
+- 👻 **Pac-Man** - Maze chase with ghosts, power pellets, and strategic gameplay
+- 🛸 **Galaga** - Space shooter with dive-bombing enemies and wave progression
+- 🤖 **Berzerk** - Maze shooter with robots and the infamous Evil Otto
+- 📱 **Asteroids Mobile** - Touch-optimized with virtual joystick and tilt controls
+
+**All games feature retro arcade sound effects** generated with Web Audio API for authentic 80s arcade feel!
 
 ## Run locally
 ```bash
