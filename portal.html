@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Classic Games Portal</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Classic Games</h1>
+    <input id="search" placeholder="Search games..." aria-label="Search games" />
+  </header>
+
+  <main id="grid" aria-live="polite"></main>
+
+  <template id="card-tpl">
+    <a class="card">
+      <div class="card__thumb" aria-hidden="true"></div>
+      <div class="card__body">
+        <h2 class="card__title"></h2>
+        <p class="card__meta"></p>
+      </div>
+    </a>
+  </template>
+
+  <footer>Use arrow keys / WASD. Some titles support touch controls. Multiplayer Asteroids requires the Node server.</footer>
+  <script src="assets/portal.js"></script>
+</body>
+</html>

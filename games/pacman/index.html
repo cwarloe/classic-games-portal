@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Pac-Man</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #00f;
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+        #ui {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        #score, #players, #lives {
+            margin: 5px 0;
+        }
+        #connectionStatus {
+            color: #0f0;
+            margin: 5px 0;
+        }
+        #connectionStatus.disconnected {
+            color: #f00;
+        }
+        .back-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #00f;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #00a;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="560" height="620"></canvas>
+        <div id="ui">
+            <div id="connectionStatus">Connecting...</div>
+            <div id="score">Score: 0</div>
+            <div id="lives">Lives: 3</div>
+            <div id="players">Players: 0</div>
+            <div>Controls: Arrow Keys to move</div>
+            <a href="/portal.html" class="back-btn">← Back to Portal</a>
+        </div>
+    </div>
+    <script src="pacman-client.js"></script>
+</body>
+</html>

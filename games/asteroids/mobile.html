@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Asteroids Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* HUD Overlay */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 4px #000;
+        }
+
+        #leftHud, #rightHud {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        #connectionStatus {
+            color: #0f0;
+        }
+
+        #connectionStatus.disconnected {
+            color: #f00;
+        }
+
+        /* Virtual Joystick */
+        #joystickContainer {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            z-index: 100;
+        }
+
+        #joystickBase {
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            position: absolute;
+        }
+
+        #joystickStick {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            transition: all 0.05s;
+        }
+
+        /* Fire Button */
+        #fireButton {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            width: 100px;
+            height: 100px;
+            border: 4px solid rgba(255, 80, 80, 0.7);
+            border-radius: 50%;
+            background: rgba(255, 80, 80, 0.2);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #fff;
+            touch-action: none;
+        }
+
+        #fireButton.active {
+            background: rgba(255, 80, 80, 0.5);
+            transform: scale(0.95);
+        }
+
+        /* Control Mode Toggle */
+        #controlModeToggle {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Fullscreen Button */
+        #fullscreenBtn {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        /* Tilt Mode Indicator */
+        #tiltIndicator {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 150, 255, 0.7);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            display: none;
+        }
+
+        #tiltIndicator.active {
+            display: block;
+        }
+
+        /* Settings Panel */
+        #settingsPanel {
+            position: absolute;
+            bottom: -200px;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            transition: bottom 0.3s;
+            z-index: 200;
+            border-top: 2px solid #fff;
+        }
+
+        #settingsPanel.visible {
+            bottom: 0;
+        }
+
+        .setting-item {
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: #555;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .toggle-switch.active {
+            background: #0f0;
+        }
+
+        .toggle-slider {
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            left: 26px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud">
+        <div id="leftHud">
+            <div id="connectionStatus">Connecting...</div>
+            <div id="score">Score: 0</div>
+        </div>
+        <div id="rightHud">
+            <div id="players">Players: 0</div>
+        </div>
+    </div>
+
+    <div id="controlModeToggle">
+        <span id="currentMode">Joystick Mode</span> - Tap to switch
+    </div>
+
+    <div id="fullscreenBtn">Enter Fullscreen</div>
+
+    <div id="tiltIndicator">Tilt to Steer</div>
+
+    <!-- Joystick Controls -->
+    <div id="joystickContainer">
+        <div id="joystickBase"></div>
+        <div id="joystickStick"></div>
+    </div>
+
+    <div id="fireButton">●</div>
+
+    <!-- Settings Panel -->
+    <div id="settingsPanel">
+        <h3>Mobile Settings</h3>
+        <div class="setting-item">
+            <span>Haptic Feedback</span>
+            <div class="toggle-switch active" id="hapticToggle">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+        <div class="setting-item">
+            <span>Volume Button Shooting</span>
+            <div class="toggle-switch active" id="volumeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+        <div class="setting-item">
+            <span>Screen Shake</span>
+            <div class="toggle-switch active" id="shakeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="mobile-client.js"></script>
+</body>
+</html>

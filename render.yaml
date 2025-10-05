@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: classic-games-portal
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /portal.html
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080

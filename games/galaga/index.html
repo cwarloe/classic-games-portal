@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Galaga</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #0ff;
+            display: block;
+            margin: 0 auto;
+        }
+        #ui {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        #score, #players, #level, #lives {
+            margin: 5px 0;
+        }
+        #connectionStatus {
+            color: #0f0;
+            margin: 5px 0;
+        }
+        #connectionStatus.disconnected {
+            color: #f00;
+        }
+        #level {
+            color: #ff0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .back-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #0ff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #0aa;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="600" height="700"></canvas>
+        <div id="ui">
+            <div id="connectionStatus">Connecting...</div>
+            <div id="level">Wave: 1</div>
+            <div id="score">Score: 0</div>
+            <div id="lives">Lives: 3</div>
+            <div id="players">Players: 0</div>
+            <div>Controls: Arrow Keys to move, Space to shoot</div>
+            <a href="/portal.html" class="back-btn">← Back to Portal</a>
+        </div>
+    </div>
+    <script src="galaga-client.js"></script>
+</body>
+</html>
