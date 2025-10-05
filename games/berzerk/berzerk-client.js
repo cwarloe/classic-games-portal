@@ -40,11 +40,26 @@ function generateRoom() {
     evilOtto = null;
     roomTimer = 0;
 
-    // Room borders
-    walls.push({ x: 0, y: 0, width: canvas.width, height: 10 });
-    walls.push({ x: 0, y: canvas.height - 10, width: canvas.width, height: 10 });
-    walls.push({ x: 0, y: 0, width: 10, height: canvas.height });
-    walls.push({ x: canvas.width - 10, y: 0, width: 10, height: canvas.height });
+    // Room borders with gaps for exits
+    const exitGap = 60;
+    const midY = canvas.height / 2 - 30;
+    const midX = canvas.width / 2 - 30;
+
+    // Top wall (with gap)
+    walls.push({ x: 0, y: 0, width: midX, height: 10 });
+    walls.push({ x: midX + exitGap, y: 0, width: canvas.width - (midX + exitGap), height: 10 });
+
+    // Bottom wall (with gap)
+    walls.push({ x: 0, y: canvas.height - 10, width: midX, height: 10 });
+    walls.push({ x: midX + exitGap, y: canvas.height - 10, width: canvas.width - (midX + exitGap), height: 10 });
+
+    // Left wall (with gap)
+    walls.push({ x: 0, y: 0, width: 10, height: midY });
+    walls.push({ x: 0, y: midY + exitGap, width: 10, height: canvas.height - (midY + exitGap) });
+
+    // Right wall (with gap)
+    walls.push({ x: canvas.width - 10, y: 0, width: 10, height: midY });
+    walls.push({ x: canvas.width - 10, y: midY + exitGap, width: 10, height: canvas.height - (midY + exitGap) });
 
     // Random interior walls
     const numWalls = 5 + Math.floor(Math.random() * 5);

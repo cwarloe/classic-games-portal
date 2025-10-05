@@ -52,13 +52,13 @@ function spawnLanes() {
     logs = [];
     turtles = [];
 
-    // Road lanes (cars) - slower speeds for easier gameplay
+    // Road lanes (cars) - much slower speeds for easier gameplay
     const carLanes = [
-        { y: 500, speed: 1.2, direction: 1, count: 3, width: 60 },
-        { y: 460, speed: -1.8, direction: -1, count: 2, width: 80 },
-        { y: 420, speed: 1, direction: 1, count: 4, width: 50 },
-        { y: 380, speed: -1.5, direction: -1, count: 3, width: 70 },
-        { y: 340, speed: 1.3, direction: 1, count: 2, width: 90 }
+        { y: 500, speed: 0.8, direction: 1, count: 3, width: 60 },
+        { y: 460, speed: -1.2, direction: -1, count: 2, width: 80 },
+        { y: 420, speed: 0.6, direction: 1, count: 4, width: 50 },
+        { y: 380, speed: -1.0, direction: -1, count: 3, width: 70 },
+        { y: 340, speed: 0.9, direction: 1, count: 2, width: 90 }
     ];
 
     carLanes.forEach(lane => {
@@ -75,13 +75,13 @@ function spawnLanes() {
         }
     });
 
-    // River lanes (logs and turtles) - slower and wider for easier gameplay
+    // River lanes (logs and turtles) - much slower and wider for easier gameplay
     const waterLanes = [
-        { y: 260, speed: 1.2, type: 'log', count: 2, width: 140 },
-        { y: 220, speed: -1, type: 'turtle', count: 3, width: 100 },
-        { y: 180, speed: 1.5, type: 'log', count: 2, width: 160 },
-        { y: 140, speed: -1.2, type: 'turtle', count: 3, width: 110 },
-        { y: 100, speed: 1.1, type: 'log', count: 3, width: 120 }
+        { y: 260, speed: 0.8, type: 'log', count: 2, width: 150 },
+        { y: 220, speed: -0.7, type: 'turtle', count: 3, width: 110 },
+        { y: 180, speed: 1.0, type: 'log', count: 2, width: 170 },
+        { y: 140, speed: -0.8, type: 'turtle', count: 3, width: 120 },
+        { y: 100, speed: 0.7, type: 'log', count: 3, width: 130 }
     ];
 
     waterLanes.forEach(lane => {
@@ -337,12 +337,31 @@ function drawFrog() {
 }
 
 function drawCar(car) {
+    // Rounded car body
     ctx.fillStyle = car.color;
-    ctx.fillRect(car.x, car.y, car.width, car.height);
+    ctx.beginPath();
+    ctx.roundRect(car.x, car.y, car.width, car.height, 8);
+    ctx.fill();
 
-    // Windows
-    ctx.fillStyle = '#0ff';
-    ctx.fillRect(car.x + 10, car.y + 5, car.width - 20, 10);
+    // Windshield (lighter blue)
+    ctx.fillStyle = '#aef';
+    ctx.beginPath();
+    ctx.roundRect(car.x + car.width * 0.2, car.y + 5, car.width * 0.6, 12, 4);
+    ctx.fill();
+
+    // Headlights
+    ctx.fillStyle = '#ff0';
+    ctx.beginPath();
+    ctx.arc(car.x + 5, car.y + car.height / 2, 3, 0, Math.PI * 2);
+    ctx.arc(car.x + car.width - 5, car.y + car.height / 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wheels
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(car.x + 12, car.y + car.height - 3, 4, 0, Math.PI * 2);
+    ctx.arc(car.x + car.width - 12, car.y + car.height - 3, 4, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function drawLog(log) {

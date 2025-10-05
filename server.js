@@ -35,14 +35,16 @@ function setupHeartbeat(wss){
 
 // Asteroids (rotation + thrust)
 const ast = {
-  players: {}, asteroids: [], bullets: [], nextId: 1,
-  createPlayer(id){ return { id, x: 400, y: 300, angle: 0, vx: 0, vy: 0, score: 0, input: {} }; },
+  players: {}, asteroids: [], bullets: [], nextId: 1, level: 1,
+  createPlayer(id){ return { id, x: 400, y: 300, angle: 0, vx: 0, vy: 0, score: 0, lives: 3, input: {}, respawnTimer: 0 }; },
   spawnAsteroids(){
     this.asteroids = [];
-    for(let i=0; i<5; i++){
+    const count = 4 + this.level;
+    const speed = 1 + this.level * 0.3;
+    for(let i=0; i<count; i++){
       this.asteroids.push({
         x: Math.random()*800, y: Math.random()*600,
-        vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2,
+        vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed,
         size: 30, rotation: Math.random()*Math.PI*2
       });
     }
@@ -51,6 +53,13 @@ const ast = {
     // Update players
     for (const id in this.players){
       const p=this.players[id],k=p.input||{};
+
+      // Handle respawn timer
+      if(p.respawnTimer > 0) {
+        p.respawnTimer--;
+        continue; // Skip movement while respawning
+      }
+
       if(k.left) p.angle-=0.06;
       if(k.right) p.angle+=0.06;
       if(k.up){
@@ -75,6 +84,21 @@ const ast = {
         p.fireTimer = 15;
       }
       if(p.fireTimer > 0) p.fireTimer--;
+
+      // Collision with asteroids
+      if(p.respawnTimer === 0) {
+        this.asteroids.forEach(a => {
+          const dx = p.x - a.x, dy = p.y - a.y;
+          if(Math.sqrt(dx*dx + dy*dy) < a.size + 10){
+            p.lives--;
+            p.respawnTimer = 180; // 3 seconds at 60fps
+            p.x = 400;
+            p.y = 300;
+            p.vx = 0;
+            p.vy = 0;
+          }
+        });
+      }
     }
 
     // Update asteroids
@@ -117,10 +141,13 @@ const ast = {
       });
     });
 
-    // Respawn asteroids if empty
-    if(this.asteroids.length === 0) this.spawnAsteroids();
+    // Respawn asteroids if empty (level up)
+    if(this.asteroids.length === 0) {
+      this.level++;
+      this.spawnAsteroids();
+    }
   },
-  state(){ return { room:'lobby', players:this.players, asteroids:this.asteroids, bullets:this.bullets }; }
+  state(){ return { room:'lobby', players:this.players, asteroids:this.asteroids, bullets:this.bullets, level:this.level }; }
 };
 ast.spawnAsteroids();
 

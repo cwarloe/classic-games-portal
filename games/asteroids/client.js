@@ -1,6 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+const levelEl = document.getElementById('level');
 const playersEl = document.getElementById('players');
 const statusEl = document.getElementById('connectionStatus');
 
@@ -11,6 +13,8 @@ let players = {};
 let asteroids = [];
 let bullets = [];
 let score = 0;
+let lives = 3;
+let level = 1;
 let ws = null;
 let lastSend = 0;
 const INPUT_INTERVAL_MS = 33; // ~30Hz
@@ -69,9 +73,15 @@ function handleServerMessage(data) {
         case 'gameState':
             asteroids = data.asteroids;
             bullets = data.bullets;
+            if (data.level !== undefined) {
+                level = data.level;
+                levelEl.textContent = `Level: ${level}`;
+            }
             if (data.players[myId]) {
                 score = data.players[myId].score || 0;
+                lives = data.players[myId].lives !== undefined ? data.players[myId].lives : 3;
                 scoreEl.textContent = `Score: ${score}`;
+                livesEl.textContent = `Lives: ${lives}`;
             }
             // Update other players
             for (let id in data.players) {
@@ -195,13 +205,18 @@ if (isMobile) {
 }
 
 // Drawing functions
-function drawShip(x, y, angle, color, thrust) {
+function drawShip(x, y, angle, color, thrust, respawning) {
+    // Flashing effect while respawning
+    if (respawning && Math.floor(Date.now() / 100) % 2 === 0) {
+        return; // Skip drawing to create flashing effect
+    }
+
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
 
     // Ship body
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = respawning ? '#f00' : color;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(SHIP_SIZE, 0);
@@ -212,7 +227,7 @@ function drawShip(x, y, angle, color, thrust) {
     ctx.stroke();
 
     // Thrust flame
-    if (thrust) {
+    if (thrust && !respawning) {
         ctx.strokeStyle = '#f80';
         ctx.beginPath();
         ctx.moveTo(-SHIP_SIZE * 0.5, -SHIP_SIZE * 0.5);
@@ -271,7 +286,8 @@ function render() {
         const player = players[id];
         const color = PLAYER_COLORS[colorIndex % PLAYER_COLORS.length];
         const isThrusting = player.thrust || false;
-        drawShip(player.x, player.y, player.angle, color, isThrusting);
+        const isRespawning = player.respawnTimer > 0;
+        drawShip(player.x, player.y, player.angle, color, isThrusting, isRespawning);
 
         // Draw player name
         ctx.fillStyle = color;

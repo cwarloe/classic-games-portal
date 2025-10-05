@@ -267,34 +267,74 @@ function drawPlayer() {
 function drawInvader(inv) {
     if (!inv.alive) return;
 
-    ctx.fillStyle = '#fff';
-
     const frame = Math.floor(inv.frame);
 
     if (inv.type === 'octopus') {
-        // Top row - octopus
+        // Top row - octopus (30 points) - Purple/Magenta
+        ctx.fillStyle = '#f0f';
+
+        // Body
+        ctx.fillRect(inv.x + 8, inv.y, 16, 8);
+        ctx.fillRect(inv.x, inv.y + 8, 32, 8);
+
+        // Legs (animated)
         if (frame === 0) {
-            ctx.fillRect(inv.x + 8, inv.y, 16, 8);
-            ctx.fillRect(inv.x, inv.y + 8, 32, 8);
             ctx.fillRect(inv.x + 4, inv.y + 16, 8, 8);
             ctx.fillRect(inv.x + 20, inv.y + 16, 8, 8);
         } else {
-            ctx.fillRect(inv.x + 8, inv.y, 16, 8);
-            ctx.fillRect(inv.x, inv.y + 8, 32, 8);
             ctx.fillRect(inv.x, inv.y + 16, 8, 8);
             ctx.fillRect(inv.x + 24, inv.y + 16, 8, 8);
         }
+
+        // Eyes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(inv.x + 8, inv.y + 4, 4, 4);
+        ctx.fillRect(inv.x + 20, inv.y + 4, 4, 4);
+
     } else if (inv.type === 'crab') {
-        // Middle rows - crab
-        ctx.fillRect(inv.x + 4, inv.y, 8, 8);
-        ctx.fillRect(inv.x + 20, inv.y, 8, 8);
+        // Middle rows - crab (20 points) - Cyan
+        ctx.fillStyle = '#0ff';
+
+        // Claws (animated)
+        if (frame === 0) {
+            ctx.fillRect(inv.x + 4, inv.y, 8, 8);
+            ctx.fillRect(inv.x + 20, inv.y, 8, 8);
+        } else {
+            ctx.fillRect(inv.x + 2, inv.y + 4, 8, 8);
+            ctx.fillRect(inv.x + 22, inv.y + 4, 8, 8);
+        }
+
+        // Body
         ctx.fillRect(inv.x + 8, inv.y + 8, 16, 8);
         ctx.fillRect(inv.x, inv.y + 16, 32, 8);
+
+        // Eyes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(inv.x + 8, inv.y + 12, 4, 4);
+        ctx.fillRect(inv.x + 20, inv.y + 12, 4, 4);
+
     } else {
-        // Bottom rows - squid
+        // Bottom rows - squid (10 points) - Green
+        ctx.fillStyle = '#0f0';
+
+        // Head
         ctx.fillRect(inv.x + 8, inv.y, 16, 8);
         ctx.fillRect(inv.x + 4, inv.y + 8, 24, 8);
-        ctx.fillRect(inv.x, inv.y + 16, 32, 8);
+
+        // Tentacles (animated)
+        if (frame === 0) {
+            ctx.fillRect(inv.x, inv.y + 16, 8, 8);
+            ctx.fillRect(inv.x + 12, inv.y + 16, 8, 8);
+            ctx.fillRect(inv.x + 24, inv.y + 16, 8, 8);
+        } else {
+            ctx.fillRect(inv.x + 4, inv.y + 16, 8, 8);
+            ctx.fillRect(inv.x + 20, inv.y + 16, 8, 8);
+        }
+
+        // Eyes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(inv.x + 10, inv.y + 4, 3, 3);
+        ctx.fillRect(inv.x + 19, inv.y + 4, 3, 3);
     }
 }
 
