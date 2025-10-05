@@ -226,12 +226,14 @@ function update() {
             // Hit target
             handleEnemyMissileHit(m.targetX, m.targetY);
             enemyMissiles.splice(i, 1);
+            continue; // Skip collision check for removed missile
         } else {
             m.x += (dx / dist) * m.speed;
             m.y += (dy / dist) * m.speed;
         }
 
         // Check collision with explosions
+        let hitExplosion = false;
         for (const exp of explosions) {
             if (exp.playerExplosion && exp.growing) {
                 const expDist = Math.hypot(m.x - exp.x, m.y - exp.y);
@@ -241,6 +243,7 @@ function update() {
                     score += 25 * wave;
                     sound.play('hit');
                     updateUI();
+                    hitExplosion = true;
                     break;
                 }
             }

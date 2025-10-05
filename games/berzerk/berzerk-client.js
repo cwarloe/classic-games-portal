@@ -7,7 +7,7 @@ const statusEl = document.getElementById('connectionStatus');
 
 // Game state
 const keys = {};
-let player = { x: 320, y: 240, angle: 0, speed: 3, alive: true };
+let player = { x: 320, y: 240, angle: 0, speed: 2, alive: true };
 let robots = [];
 let bullets = [];
 let walls = [];
@@ -21,15 +21,33 @@ let fireTimer = 0;
 let roomTimer = 0;
 const ROOM_TIME_LIMIT = 1200; // 20 seconds at 60fps
 
+// Multiplayer state
+let twoPlayerMode = false;
+let currentPlayer = 1;
+let player1Score = 0;
+let player2Score = 0;
+let player1Lives = 3;
+let player2Lives = 3;
+let showTurnMessage = false;
+let turnMessageTimer = 0;
+
 // Constants
 const TILE_SIZE = 32;
 
 // Initialize game
 function init() {
-    statusEl.textContent = 'Single Player';
-    statusEl.classList.remove('disconnected');
+    updateStatusDisplay();
     generateRoom();
     gameLoop();
+}
+
+function updateStatusDisplay() {
+    if (twoPlayerMode) {
+        statusEl.textContent = `P1: ${player1Score} | P2: ${player2Score} | Current: P${currentPlayer}`;
+    } else {
+        statusEl.textContent = 'Press T for 2-Player Mode';
+    }
+    statusEl.classList.remove('disconnected');
 }
 
 // Generate random maze room
@@ -117,6 +135,20 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();
         keys[e.key] = true;
     }
+    if ((e.key === 't' || e.key === 'T') && !gameOver) {
+        twoPlayerMode = !twoPlayerMode;
+        if (twoPlayerMode) {
+            currentPlayer = 1;
+            player1Score = score;
+            player2Score = 0;
+            player1Lives = lives;
+            player2Lives = 3;
+        }
+        updateStatusDisplay();
+    }
+    if (e.key === ' ' && showTurnMessage) {
+        showTurnMessage = false;
+    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -134,6 +166,11 @@ function checkWallCollision(x, y, size = 10) {
 // Update game state
 function update() {
     if (gameOver) return;
+    if (showTurnMessage) {
+        turnMessageTimer--;
+        if (turnMessageTimer <= 0) showTurnMessage = false;
+        return;
+    }
 
     roomTimer++;
 
@@ -227,10 +264,42 @@ function update() {
             livesEl.textContent = `Lives: ${lives}`;
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
-            if (lives <= 0) {
-                gameOver = true;
-                statusEl.textContent = 'GAME OVER - Press R to restart';
-                statusEl.classList.add('disconnected');
+            sound.play('hit');
+            if (twoPlayerMode) {
+                if (currentPlayer === 1) {
+                    player1Lives = lives;
+                    player1Score = score;
+                } else {
+                    player2Lives = lives;
+                    player2Score = score;
+                }
+                if (lives <= 0) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    if (currentPlayer === 1) {
+                        score = player1Score;
+                        lives = player1Lives;
+                    } else {
+                        score = player2Score;
+                        lives = player2Lives;
+                    }
+                    if (player1Lives <= 0 && player2Lives <= 0) {
+                        gameOver = true;
+                        statusEl.textContent = 'GAME OVER';
+                        statusEl.classList.add('disconnected');
+                    } else {
+                        showTurnMessage = true;
+                        turnMessageTimer = 180;
+                        updateStatusDisplay();
+                    }
+                    scoreEl.textContent = `Score: ${score}`;
+                    livesEl.textContent = `Lives: ${lives}`;
+                }
+            } else {
+                if (lives <= 0) {
+                    gameOver = true;
+                    statusEl.textContent = 'GAME OVER - Press R to restart';
+                    statusEl.classList.add('disconnected');
+                }
             }
         }
     });
@@ -281,6 +350,11 @@ function update() {
                 if (Math.abs(bullet.x - robots[i].x) < 15 && Math.abs(bullet.y - robots[i].y) < 15) {
                     robots.splice(i, 1);
                     score += 50;
+                    if (twoPlayerMode) {
+                        if (currentPlayer === 1) player1Score = score;
+                        else player2Score = score;
+                        updateStatusDisplay();
+                    }
                     scoreEl.textContent = `Score: ${score}`;
                     sound.play('explosion');
                     return false;
@@ -295,11 +369,43 @@ function update() {
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
             sound.play('hit');
-            if (lives <= 0) {
-                gameOver = true;
-                statusEl.textContent = 'GAME OVER - Press R to restart';
-                statusEl.classList.add('disconnected');
-                sound.play('death');
+            if (twoPlayerMode) {
+                if (currentPlayer === 1) {
+                    player1Lives = lives;
+                    player1Score = score;
+                } else {
+                    player2Lives = lives;
+                    player2Score = score;
+                }
+                if (lives <= 0) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    if (currentPlayer === 1) {
+                        score = player1Score;
+                        lives = player1Lives;
+                    } else {
+                        score = player2Score;
+                        lives = player2Lives;
+                    }
+                    if (player1Lives <= 0 && player2Lives <= 0) {
+                        gameOver = true;
+                        statusEl.textContent = 'GAME OVER';
+                        statusEl.classList.add('disconnected');
+                        sound.play('death');
+                    } else {
+                        showTurnMessage = true;
+                        turnMessageTimer = 180;
+                        updateStatusDisplay();
+                    }
+                    scoreEl.textContent = `Score: ${score}`;
+                    livesEl.textContent = `Lives: ${lives}`;
+                }
+            } else {
+                if (lives <= 0) {
+                    gameOver = true;
+                    statusEl.textContent = 'GAME OVER - Press R to restart';
+                    statusEl.classList.add('disconnected');
+                    sound.play('death');
+                }
             }
             return false;
         }
@@ -441,7 +547,24 @@ function render() {
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
         ctx.font = '16px "Courier New"';
-        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        if (twoPlayerMode) {
+            const winner = player1Score > player2Score ? 1 : (player2Score > player1Score ? 2 : 0);
+            ctx.fillText(winner === 0 ? 'TIE!' : `PLAYER ${winner} WINS!`, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText(`P1: ${player1Score}  |  P2: ${player2Score}`, canvas.width / 2, canvas.height / 2 + 65);
+        } else {
+            ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        }
+    }
+    if (showTurnMessage) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff0';
+        ctx.font = '40px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.fillText(`PLAYER ${currentPlayer}'S TURN`, canvas.width / 2, canvas.height / 2);
+        ctx.font = '16px "Courier New"';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Press SPACE to continue', canvas.width / 2, canvas.height / 2 + 40);
     }
 }
 
@@ -457,6 +580,12 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'r' || e.key === 'R') {
         if (gameOver) {
             gameOver = false;
+            twoPlayerMode = false;
+            currentPlayer = 1;
+            player1Score = 0;
+            player2Score = 0;
+            player1Lives = 3;
+            player2Lives = 3;
             score = 0;
             lives = 3;
             room = 1;
@@ -466,8 +595,7 @@ window.addEventListener('keydown', (e) => {
             scoreEl.textContent = `Score: ${score}`;
             livesEl.textContent = `Lives: ${lives}`;
             roomEl.textContent = `Room: ${room}`;
-            statusEl.textContent = 'Single Player';
-            statusEl.classList.remove('disconnected');
+            updateStatusDisplay();
             generateRoom();
         }
     }

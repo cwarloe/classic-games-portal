@@ -22,11 +22,31 @@ let fireTimer = 0;
 let invaderFireTimer = 60;
 let moveTimer = 0;
 
+// Multiplayer state
+let twoPlayerMode = false;
+let currentPlayer = 1;
+let player1Score = 0;
+let player2Score = 0;
+let player1Lives = 3;
+let player2Lives = 3;
+let showTurnMessage = false;
+let turnMessageTimer = 0;
+
 // Initialize
 function init() {
     spawnInvaders();
     spawnBunkers();
     gameLoop();
+}
+
+function updateStatusDisplay() {
+    const statusEl = document.getElementById('connectionStatus');
+    if (!statusEl) return;
+    if (twoPlayerMode) {
+        statusEl.textContent = `P1: ${player1Score} | P2: ${player2Score} | Current: P${currentPlayer}`;
+    } else {
+        statusEl.textContent = 'Press T for 2-Player Mode';
+    }
 }
 
 // Spawn invader formation
@@ -89,6 +109,20 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();
         keys[e.key] = true;
     }
+    if ((e.key === 't' || e.key === 'T') && !gameOver) {
+        twoPlayerMode = !twoPlayerMode;
+        if (twoPlayerMode) {
+            currentPlayer = 1;
+            player1Score = score;
+            player2Score = 0;
+            player1Lives = lives;
+            player2Lives = 3;
+        }
+        updateStatusDisplay();
+    }
+    if (e.key === ' ' && showTurnMessage) {
+        showTurnMessage = false;
+    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -98,6 +132,11 @@ window.addEventListener('keyup', (e) => {
 // Update
 function update() {
     if (gameOver) return;
+    if (showTurnMessage) {
+        turnMessageTimer--;
+        if (turnMessageTimer <= 0) showTurnMessage = false;
+        return;
+    }
 
     // Player movement
     if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
@@ -197,6 +236,11 @@ function update() {
                 bullets.splice(bIdx, 1);
                 inv.alive = false;
                 score += inv.points;
+                if (twoPlayerMode) {
+                    if (currentPlayer === 1) player1Score = score;
+                    else player2Score = score;
+                    updateStatusDisplay();
+                }
                 scoreEl.textContent = `Score: ${score}`;
                 sound.play('explosion');
             }
@@ -228,9 +272,39 @@ function update() {
             lives--;
             livesEl.textContent = `Lives: ${lives}`;
             sound.play('hit');
-            if (lives <= 0) {
-                gameOver = true;
-                sound.play('death');
+            if (twoPlayerMode) {
+                if (currentPlayer === 1) {
+                    player1Lives = lives;
+                    player1Score = score;
+                } else {
+                    player2Lives = lives;
+                    player2Score = score;
+                }
+                if (lives <= 0) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    if (currentPlayer === 1) {
+                        score = player1Score;
+                        lives = player1Lives;
+                    } else {
+                        score = player2Score;
+                        lives = player2Lives;
+                    }
+                    if (player1Lives <= 0 && player2Lives <= 0) {
+                        gameOver = true;
+                        sound.play('death');
+                    } else {
+                        showTurnMessage = true;
+                        turnMessageTimer = 180;
+                        updateStatusDisplay();
+                    }
+                    scoreEl.textContent = `Score: ${score}`;
+                    livesEl.textContent = `Lives: ${lives}`;
+                }
+            } else {
+                if (lives <= 0) {
+                    gameOver = true;
+                    sound.play('death');
+                }
             }
         }
     });
@@ -370,7 +444,24 @@ function render() {
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
         ctx.font = '16px "Courier New"';
-        ctx.fillText('Press R to restart', canvas.width / 2, canvas.height / 2 + 40);
+        if (twoPlayerMode) {
+            const winner = player1Score > player2Score ? 1 : (player2Score > player1Score ? 2 : 0);
+            ctx.fillText(winner === 0 ? 'TIE!' : `PLAYER ${winner} WINS!`, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText(`P1: ${player1Score}  |  P2: ${player2Score}`, canvas.width / 2, canvas.height / 2 + 65);
+        } else {
+            ctx.fillText('Press R to restart', canvas.width / 2, canvas.height / 2 + 40);
+        }
+    }
+    if (showTurnMessage) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff0';
+        ctx.font = '40px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.fillText(`PLAYER ${currentPlayer}'S TURN`, canvas.width / 2, canvas.height / 2);
+        ctx.font = '16px "Courier New"';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Press SPACE to continue', canvas.width / 2, canvas.height / 2 + 40);
     }
 }
 
@@ -385,6 +476,12 @@ function gameLoop() {
 window.addEventListener('keydown', (e) => {
     if ((e.key === 'r' || e.key === 'R') && gameOver) {
         gameOver = false;
+        twoPlayerMode = false;
+        currentPlayer = 1;
+        player1Score = 0;
+        player2Score = 0;
+        player1Lives = 3;
+        player2Lives = 3;
         score = 0;
         lives = 3;
         level = 1;
@@ -395,6 +492,7 @@ window.addEventListener('keydown', (e) => {
         livesEl.textContent = `Lives: ${lives}`;
         levelEl.textContent = `Level: ${level}`;
         invaderDirection = 1;
+        updateStatusDisplay();
         spawnInvaders();
         spawnBunkers();
     }

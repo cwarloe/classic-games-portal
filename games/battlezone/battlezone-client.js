@@ -26,10 +26,10 @@ class Battlezone {
             angle: 0,
             speed: 0,
             rotationSpeed: 0,
-            maxSpeed: 0.15,
-            acceleration: 0.008,
+            maxSpeed: 0.08,
+            acceleration: 0.004,
             friction: 0.95,
-            rotationAccel: 0.003,
+            rotationAccel: 0.002,
             rotationFriction: 0.90
         };
 
