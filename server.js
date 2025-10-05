@@ -4,6 +4,12 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
+
+// Redirect root to portal
+app.get('/', (req, res) => {
+  res.redirect('/portal.html');
+});
+
 app.use(express.static(__dirname));
 const server = http.createServer(app);
 
