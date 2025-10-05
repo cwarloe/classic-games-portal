@@ -29,13 +29,94 @@ function setupHeartbeat(wss){
 
 // Asteroids (rotation + thrust)
 const ast = {
-  players: {}, nextId: 1,
-  createPlayer(id){ return { id, x: 400, y: 300, angle: 0, input: {} }; },
-  update(){ for (const id in this.players){ const p=this.players[id],k=p.input||{};
-    if(k.left) p.angle-=0.06; if(k.right) p.angle+=0.06; if(k.up){ p.x+=Math.cos(p.angle)*3.2; p.y+=Math.sin(p.angle)*3.2; }
-    if(p.x<0)p.x+=800; if(p.x>800)p.x-=800; if(p.y<0)p.y+=600; if(p.y>600)p.y-=600; } },
-  state(){ return { room:'lobby', players:this.players }; }
+  players: {}, asteroids: [], bullets: [], nextId: 1,
+  createPlayer(id){ return { id, x: 400, y: 300, angle: 0, vx: 0, vy: 0, score: 0, input: {} }; },
+  spawnAsteroids(){
+    this.asteroids = [];
+    for(let i=0; i<5; i++){
+      this.asteroids.push({
+        x: Math.random()*800, y: Math.random()*600,
+        vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2,
+        size: 30, rotation: Math.random()*Math.PI*2
+      });
+    }
+  },
+  update(){
+    // Update players
+    for (const id in this.players){
+      const p=this.players[id],k=p.input||{};
+      if(k.left) p.angle-=0.06;
+      if(k.right) p.angle+=0.06;
+      if(k.up){
+        p.vx += Math.cos(p.angle)*0.15;
+        p.vy += Math.sin(p.angle)*0.15;
+      }
+      p.vx *= 0.98;
+      p.vy *= 0.98;
+      p.x += p.vx;
+      p.y += p.vy;
+      if(p.x<0)p.x+=800; if(p.x>800)p.x-=800;
+      if(p.y<0)p.y+=600; if(p.y>600)p.y-=600;
+
+      // Fire bullets
+      if(k.space && (!p.fireTimer || p.fireTimer <= 0)){
+        this.bullets.push({
+          x: p.x, y: p.y,
+          vx: Math.cos(p.angle)*7 + p.vx,
+          vy: Math.sin(p.angle)*7 + p.vy,
+          ttl: 60, owner: id
+        });
+        p.fireTimer = 15;
+      }
+      if(p.fireTimer > 0) p.fireTimer--;
+    }
+
+    // Update asteroids
+    this.asteroids.forEach(a => {
+      a.x += a.vx; a.y += a.vy;
+      if(a.x<0)a.x+=800; if(a.x>800)a.x-=800;
+      if(a.y<0)a.y+=600; if(a.y>600)a.y-=600;
+      a.rotation += 0.01;
+    });
+
+    // Update bullets
+    this.bullets = this.bullets.filter(b => {
+      b.x += b.vx; b.y += b.vy;
+      b.ttl--;
+      return b.ttl > 0 && b.x >= 0 && b.x <= 800 && b.y >= 0 && b.y <= 600;
+    });
+
+    // Collision: bullets vs asteroids
+    this.bullets.forEach((b, bi) => {
+      this.asteroids.forEach((a, ai) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        if(Math.sqrt(dx*dx + dy*dy) < a.size){
+          this.bullets.splice(bi, 1);
+          this.asteroids.splice(ai, 1);
+          if(this.players[b.owner]) this.players[b.owner].score += 100;
+
+          // Split asteroid
+          if(a.size > 15){
+            for(let i=0; i<2; i++){
+              this.asteroids.push({
+                x: a.x, y: a.y,
+                vx: (Math.random()-0.5)*3,
+                vy: (Math.random()-0.5)*3,
+                size: a.size/2,
+                rotation: Math.random()*Math.PI*2
+              });
+            }
+          }
+        }
+      });
+    });
+
+    // Respawn asteroids if empty
+    if(this.asteroids.length === 0) this.spawnAsteroids();
+  },
+  state(){ return { room:'lobby', players:this.players, asteroids:this.asteroids, bullets:this.bullets }; }
 };
+ast.spawnAsteroids();
 
 function createEngine(w=960,h=540){
   return {
