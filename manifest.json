@@ -1,32 +1,62 @@
-﻿[
-    {
-        "id":  "asteroids",
-        "title":  "Asteroids",
-        "entry":  "games/asteroids/index.html",
-        "system":  "Arcade",
-        "year":  1979,
-        "tags":  [
-
-                 ]
-    },
-    {
-        "id":  "galaga",
-        "title":  "Galaga",
-        "entry":  "games/galaga/index.html",
-        "system":  "Arcade",
-        "year":  1981,
-        "tags":  [
-                     "shooter"
-                 ]
-    },
-    {
-        "id":  "berzerk",
-        "title":  "Berzerk",
-        "entry":  "games/berzerk/index.html",
-        "system":  "Arcade",
-        "year":  1980,
-        "tags":  [
-                     "shooter"
-                 ]
-    }
+[
+  {
+    "id": "asteroids",
+    "title": "Asteroids",
+    "entry": "games/asteroids/index.html",
+    "system": "",
+    "year": "",
+    "tags": [],
+    "author": ""
+  },
+  {
+    "id": "berzerk",
+    "title": "Berzerk",
+    "entry": "games/berzerk/index.html",
+    "system": "",
+    "year": "",
+    "tags": [],
+    "author": ""
+  },
+  {
+    "id": "frogger",
+    "title": "Frogger",
+    "entry": "games/frogger/index.html",
+    "system": "Arcade",
+    "year": 1981,
+    "tags": [
+      "action",
+      "classic"
+    ],
+    "author": ""
+  },
+  {
+    "id": "galaga",
+    "title": "Galaga",
+    "entry": "games/galaga/index.html",
+    "system": "",
+    "year": "",
+    "tags": [],
+    "author": ""
+  },
+  {
+    "id": "pacman",
+    "title": "Pacman",
+    "entry": "games/pacman/index.html",
+    "system": "",
+    "year": "",
+    "tags": [],
+    "author": ""
+  },
+  {
+    "id": "spaceinvaders",
+    "title": "Space Invaders",
+    "entry": "games/spaceinvaders/index.html",
+    "system": "Arcade",
+    "year": 1978,
+    "tags": [
+      "shooter",
+      "classic"
+    ],
+    "author": ""
+  }
 ]

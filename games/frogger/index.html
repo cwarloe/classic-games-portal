@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frogger</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #0a0;
+            display: block;
+            margin: 0 auto;
+        }
+        #ui {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        #score, #lives, #time {
+            margin: 5px 0;
+        }
+        #time {
+            color: #ff0;
+            font-weight: bold;
+        }
+        .back-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #0a0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #080;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="520" height="650"></canvas>
+        <div id="ui">
+            <div id="score">Score: 0</div>
+            <div id="lives">Lives: 3</div>
+            <div id="time">Time: 60</div>
+            <div>Controls: Arrow Keys to move</div>
+            <a href="/portal.html" class="back-btn">← Back to Portal</a>
+        </div>
+    </div>
+    <script src="/assets/sounds.js"></script>
+    <script src="frogger-client.js"></script>
+</body>
+</html>
