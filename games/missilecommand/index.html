@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missile Command</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid #0ff;
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+        }
+        #ui {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        #score, #wave, #ammo {
+            margin: 5px 0;
+        }
+        #wave {
+            color: #ff0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #score {
+            color: #0f0;
+            font-size: 18px;
+        }
+        #ammo {
+            color: #f0f;
+            font-size: 14px;
+        }
+        #gameOverScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #f00;
+            padding: 30px;
+            display: none;
+            text-align: center;
+            z-index: 100;
+        }
+        #gameOverScreen.show {
+            display: block;
+        }
+        #gameOverScreen h1 {
+            color: #f00;
+            font-size: 36px;
+            margin: 0 0 20px 0;
+        }
+        #gameOverScreen p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .btn {
+            margin: 10px 5px;
+            padding: 8px 16px;
+            background: #0ff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #0aa;
+        }
+        .back-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #0ff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #0aa;
+        }
+        #controls {
+            margin: 10px 0;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="wave">Wave: 1</div>
+            <div id="score">Score: 0</div>
+            <div id="ammo">Left: 10 | Center: 10 | Right: 10</div>
+            <div id="controls">
+                Click to fire | Q/A: Left Battery | W/S: Center Battery | E/D: Right Battery
+            </div>
+            <a href="/portal.html" class="back-btn">← Back to Portal</a>
+        </div>
+    </div>
+
+    <div id="gameOverScreen">
+        <h1>GAME OVER</h1>
+        <p id="finalScore">Final Score: 0</p>
+        <p id="wavesCompleted">Waves Completed: 0</p>
+        <button class="btn" onclick="location.reload()">Play Again</button>
+        <a href="/portal.html" class="btn">Back to Portal</a>
+    </div>
+
+    <script src="/assets/sounds.js"></script>
+    <script src="missilecommand-client.js"></script>
+</body>
+</html>

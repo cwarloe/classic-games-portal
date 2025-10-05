@@ -58,5 +58,32 @@
       "classic"
     ],
     "author": ""
+  },
+  {
+    "id": "battlezone",
+    "title": "Battlezone",
+    "entry": "games/battlezone/index.html",
+    "system": "Arcade",
+    "year": 1980,
+    "tags": [
+      "tank",
+      "3d",
+      "vector",
+      "classic"
+    ],
+    "author": ""
+  },
+  {
+    "id": "missilecommand",
+    "title": "Missile Command",
+    "entry": "games/missilecommand/index.html",
+    "system": "Arcade",
+    "year": 1980,
+    "tags": [
+      "strategy",
+      "defense",
+      "classic"
+    ],
+    "author": ""
   }
 ]

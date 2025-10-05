@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battlezone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            text-align: center;
+            position: relative;
+        }
+        canvas {
+            border: 3px solid #0f0;
+            display: block;
+            background: #000;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 16px;
+            color: #0f0;
+            text-align: left;
+            text-shadow: 0 0 5px #0f0;
+            pointer-events: none;
+        }
+        #ui div {
+            margin: 5px 0;
+        }
+        #radar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 120px;
+            height: 120px;
+            border: 2px solid #0f0;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 10px #0f0;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #0f0;
+            padding: 30px;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 20px #0f0;
+        }
+        #gameOver h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #0f0;
+        }
+        #gameOver p {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        #gameOver button {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            cursor: pointer;
+            box-shadow: 0 0 10px #0f0;
+        }
+        #gameOver button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .back-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 8px 16px;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #0f0;
+        }
+        .back-btn:hover {
+            background: #0f0;
+            color: #000;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #0f0;
+            text-align: right;
+            opacity: 0.7;
+        }
+        #levelMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            color: #0f0;
+            text-shadow: 0 0 15px #0f0;
+            display: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="ui">
+            <div id="score">SCORE: 0</div>
+            <div id="lives">LIVES: 3</div>
+            <div id="level">LEVEL: 1</div>
+            <div id="enemies">ENEMIES: 0</div>
+        </div>
+
+        <canvas id="radar"></canvas>
+
+        <div id="gameOver">
+            <h1>GAME OVER</h1>
+            <p id="finalScore">SCORE: 0</p>
+            <p id="finalLevel">LEVEL: 1</p>
+            <button id="restartBtn">PLAY AGAIN</button>
+        </div>
+
+        <div id="levelMessage"></div>
+
+        <a href="../../portal.html" class="back-btn">← BACK TO PORTAL</a>
+
+        <div id="controls">
+            ARROW KEYS: Move<br>
+            SPACE: Shoot<br>
+            ESC: Pause
+        </div>
+    </div>
+
+    <script src="../../assets/sounds.js"></script>
+    <script src="battlezone-client.js"></script>
+</body>
+</html>
