@@ -16,10 +16,11 @@ let lives = 3;
 let level = 1;
 let gameOver = false;
 let invaderDirection = 1;
-let invaderSpeed = 0.5;
-let invaderDropDistance = 20;
+let invaderSpeed = 1.5;
+let invaderDropDistance = 15;
 let fireTimer = 0;
-let invaderFireTimer = 0;
+let invaderFireTimer = 60;
+let moveTimer = 0;
 
 // Initialize
 function init() {
@@ -57,7 +58,8 @@ function spawnInvaders() {
         }
     }
 
-    invaderSpeed = 0.5 + level * 0.2;
+    invaderSpeed = 1.5 + level * 0.3;
+    invaderFireTimer = 60;
 }
 
 // Spawn bunkers (shields)
@@ -152,15 +154,19 @@ function update() {
         invaderDirection *= -1;
     }
 
-    // Move invaders
-    invaders.forEach(inv => {
-        if (!inv.alive) return;
+    // Move invaders (stepped movement for classic feel)
+    moveTimer++;
+    if (moveTimer > 30) {
+        moveTimer = 0;
+        invaders.forEach(inv => {
+            if (!inv.alive) return;
 
-        if (moveDown) {
-            inv.y += invaderDropDistance;
-        }
-        inv.x += invaderDirection * invaderSpeed;
-    });
+            if (moveDown) {
+                inv.y += invaderDropDistance;
+            }
+            inv.x += invaderDirection * 10; // Stepped movement
+        });
+    }
 
     // Invader shooting
     invaderFireTimer--;

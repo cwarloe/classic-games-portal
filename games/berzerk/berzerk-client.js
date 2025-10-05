@@ -89,7 +89,7 @@ function generateRoom() {
         robots.push({
             x: rx,
             y: ry,
-            speed: 1 + room * 0.1,
+            speed: 1.5 + room * 0.1,
             color: ['#f00', '#f80', '#f0f'][Math.floor(Math.random() * 3)],
             fireTimer: Math.floor(Math.random() * 60)
         });

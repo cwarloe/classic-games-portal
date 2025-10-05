@@ -6,14 +6,14 @@ const timeEl = document.getElementById('time');
 
 // Game state
 const keys = {};
-let frog = { x: 260, y: 600, width: 30, height: 30, onLog: null };
+let frog = { x: 240, y: 600, width: 35, height: 35, onLog: null, targetX: 240, targetY: 600 };
 let cars = [];
 let logs = [];
 let turtles = [];
 let homes = [];
 let score = 0;
 let lives = 3;
-let timeLeft = 60;
+let timeLeft = 90;
 let gameOver = false;
 let levelComplete = false;
 let moveTimer = 0;
@@ -22,6 +22,7 @@ let moveTimer = 0;
 const TILE_SIZE = 40;
 const GRID_WIDTH = 13;
 const GRID_HEIGHT = 15;
+const MOVE_SPEED = 8; // Smooth movement
 
 // Initialize
 function init() {
@@ -51,13 +52,13 @@ function spawnLanes() {
     logs = [];
     turtles = [];
 
-    // Road lanes (cars)
+    // Road lanes (cars) - slower speeds for easier gameplay
     const carLanes = [
-        { y: 500, speed: 2, direction: 1, count: 3, width: 60 },
-        { y: 460, speed: -3, direction: -1, count: 2, width: 80 },
-        { y: 420, speed: 1.5, direction: 1, count: 4, width: 50 },
-        { y: 380, speed: -2.5, direction: -1, count: 3, width: 70 },
-        { y: 340, speed: 2.5, direction: 1, count: 2, width: 90 }
+        { y: 500, speed: 1.2, direction: 1, count: 3, width: 60 },
+        { y: 460, speed: -1.8, direction: -1, count: 2, width: 80 },
+        { y: 420, speed: 1, direction: 1, count: 4, width: 50 },
+        { y: 380, speed: -1.5, direction: -1, count: 3, width: 70 },
+        { y: 340, speed: 1.3, direction: 1, count: 2, width: 90 }
     ];
 
     carLanes.forEach(lane => {
@@ -74,13 +75,13 @@ function spawnLanes() {
         }
     });
 
-    // River lanes (logs and turtles)
+    // River lanes (logs and turtles) - slower and wider for easier gameplay
     const waterLanes = [
-        { y: 260, speed: 2, type: 'log', count: 2, width: 120 },
-        { y: 220, speed: -1.5, type: 'turtle', count: 3, width: 80 },
-        { y: 180, speed: 2.5, type: 'log', count: 2, width: 150 },
-        { y: 140, speed: -2, type: 'turtle', count: 3, width: 90 },
-        { y: 100, speed: 1.8, type: 'log', count: 3, width: 100 }
+        { y: 260, speed: 1.2, type: 'log', count: 2, width: 140 },
+        { y: 220, speed: -1, type: 'turtle', count: 3, width: 100 },
+        { y: 180, speed: 1.5, type: 'log', count: 2, width: 160 },
+        { y: 140, speed: -1.2, type: 'turtle', count: 3, width: 110 },
+        { y: 100, speed: 1.1, type: 'log', count: 3, width: 120 }
     ];
 
     waterLanes.forEach(lane => {
@@ -144,7 +145,9 @@ window.addEventListener('keydown', (e) => {
 
         if (oldX !== frog.x || oldY !== frog.y) {
             sound.play('jump');
-            moveTimer = 10;
+            moveTimer = 5;
+            frog.targetX = frog.x;
+            frog.targetY = frog.y;
 
             // Score for forward movement
             if (frog.y < oldY) {
@@ -296,21 +299,41 @@ function update() {
 }
 
 function resetFrog() {
-    frog.x = 260;
+    frog.x = 240;
     frog.y = 600;
+    frog.targetX = 240;
+    frog.targetY = 600;
     frog.onLog = null;
-    timeLeft = 60;
+    timeLeft = 90;
 }
 
 // Draw
 function drawFrog() {
+    // Body (rounded)
     ctx.fillStyle = '#0f0';
-    ctx.fillRect(frog.x, frog.y, frog.width, frog.height);
+    ctx.beginPath();
+    ctx.arc(frog.x + frog.width / 2, frog.y + frog.height / 2, frog.width / 2, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Eyes
+    // Eyes (white with black pupils)
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(frog.x + 10, frog.y + 10, 6, 0, Math.PI * 2);
+    ctx.arc(frog.x + 25, frog.y + 10, 6, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.fillStyle = '#000';
-    ctx.fillRect(frog.x + 5, frog.y + 5, 8, 8);
-    ctx.fillRect(frog.x + 17, frog.y + 5, 8, 8);
+    ctx.beginPath();
+    ctx.arc(frog.x + 10, frog.y + 10, 3, 0, Math.PI * 2);
+    ctx.arc(frog.x + 25, frog.y + 10, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Legs (simple rounded rectangles)
+    ctx.fillStyle = '#0a0';
+    ctx.beginPath();
+    ctx.arc(frog.x + 5, frog.y + 28, 4, 0, Math.PI * 2);
+    ctx.arc(frog.x + 30, frog.y + 28, 4, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function drawCar(car) {
