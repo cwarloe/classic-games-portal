@@ -3,19 +3,21 @@
     "id": "asteroids",
     "title": "Asteroids",
     "entry": "games/asteroids/index.html",
-    "system": "",
-    "year": "",
-    "tags": [],
-    "author": ""
+    "system": "Arcade",
+    "year": 1979,
+    "tags": ["shooter", "classic"],
+    "author": "",
+    "multiplayer": "realtime"
   },
   {
     "id": "berzerk",
     "title": "Berzerk",
     "entry": "games/berzerk/index.html",
-    "system": "",
-    "year": "",
-    "tags": [],
-    "author": ""
+    "system": "Arcade",
+    "year": 1980,
+    "tags": ["shooter", "maze", "classic"],
+    "author": "",
+    "multiplayer": "turn-based"
   },
   {
     "id": "frogger",
@@ -23,29 +25,29 @@
     "entry": "games/frogger/index.html",
     "system": "Arcade",
     "year": 1981,
-    "tags": [
-      "action",
-      "classic"
-    ],
-    "author": ""
+    "tags": ["action", "classic"],
+    "author": "",
+    "multiplayer": "turn-based"
   },
   {
     "id": "galaga",
     "title": "Galaga",
     "entry": "games/galaga/index.html",
-    "system": "",
-    "year": "",
-    "tags": [],
-    "author": ""
+    "system": "Arcade",
+    "year": 1981,
+    "tags": ["shooter", "classic"],
+    "author": "",
+    "multiplayer": "turn-based"
   },
   {
     "id": "pacman",
-    "title": "Pacman",
+    "title": "Pac-Man",
     "entry": "games/pacman/index.html",
-    "system": "",
-    "year": "",
-    "tags": [],
-    "author": ""
+    "system": "Arcade",
+    "year": 1980,
+    "tags": ["action", "classic"],
+    "author": "",
+    "multiplayer": "turn-based"
   },
   {
     "id": "spaceinvaders",
@@ -53,11 +55,9 @@
     "entry": "games/spaceinvaders/index.html",
     "system": "Arcade",
     "year": 1978,
-    "tags": [
-      "shooter",
-      "classic"
-    ],
-    "author": ""
+    "tags": ["shooter", "classic"],
+    "author": "",
+    "multiplayer": "turn-based"
   },
   {
     "id": "battlezone",
@@ -65,13 +65,9 @@
     "entry": "games/battlezone/index.html",
     "system": "Arcade",
     "year": 1980,
-    "tags": [
-      "tank",
-      "3d",
-      "vector",
-      "classic"
-    ],
-    "author": ""
+    "tags": ["tank", "3d", "vector", "classic"],
+    "author": "",
+    "multiplayer": false
   },
   {
     "id": "missilecommand",
@@ -79,11 +75,8 @@
     "entry": "games/missilecommand/index.html",
     "system": "Arcade",
     "year": 1980,
-    "tags": [
-      "strategy",
-      "defense",
-      "classic"
-    ],
-    "author": ""
+    "tags": ["strategy", "defense", "classic"],
+    "author": "",
+    "multiplayer": false
   }
 ]

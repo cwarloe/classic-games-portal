@@ -16,6 +16,11 @@ async function load() {
       node.querySelector('.card__title').textContent = g.title;
       const meta = [g.year, g.system].filter(Boolean).join(' • ');
       node.querySelector('.card__meta').textContent = meta;
+      const badge = node.querySelector('.card__badge');
+      if (g.multiplayer) {
+        badge.textContent = g.multiplayer === 'realtime' ? '2P Realtime' : '2P Turn-Based';
+        badge.removeAttribute('hidden');
+      }
       grid.appendChild(node);
     });
   }
