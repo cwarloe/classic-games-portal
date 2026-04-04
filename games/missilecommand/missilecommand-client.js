@@ -42,6 +42,9 @@ let playerMissiles = [];
 let explosions = [];
 let waveActive = false;
 let waveCompleteTimer = 0;
+let missileQueue = [];
+let missileSpawnTimer = 0;
+const MISSILE_SPAWN_INTERVAL = 30; // frames between enemy missile spawns (~0.5s at 60fps)
 let crosshair = { x: 400, y: 300 };
 
 // Input
@@ -135,14 +138,15 @@ function fireMissile(batteryIndex, targetX, targetY) {
 
 function spawnWave() {
     waveActive = true;
+    waveCompleteTimer = 0;
     const missileCount = 5 + wave * 2;
     const speed = 1 + wave * 0.2;
 
+    missileQueue = [];
     for (let i = 0; i < missileCount; i++) {
-        setTimeout(() => {
-            spawnEnemyMissile(speed);
-        }, i * 500);
+        missileQueue.push(speed);
     }
+    missileSpawnTimer = MISSILE_SPAWN_INTERVAL;
 }
 
 function spawnEnemyMissile(speed) {
@@ -184,6 +188,15 @@ function spawnEnemyMissile(speed) {
 
 function update() {
     if (gameOver) return;
+
+    // Spawn queued enemy missiles
+    if (waveActive && missileQueue.length > 0) {
+        missileSpawnTimer--;
+        if (missileSpawnTimer <= 0) {
+            spawnEnemyMissile(missileQueue.shift());
+            missileSpawnTimer = MISSILE_SPAWN_INTERVAL;
+        }
+    }
 
     // Update player missiles
     for (let i = playerMissiles.length - 1; i >= 0; i--) {
@@ -267,12 +280,14 @@ function update() {
         }
     }
 
-    // Check wave completion
-    if (waveActive && enemyMissiles.length === 0 && playerMissiles.length === 0) {
+    // Check wave completion - only after all missiles have spawned and been cleared
+    if (waveActive && missileQueue.length === 0 && enemyMissiles.length === 0 && playerMissiles.length === 0) {
         waveCompleteTimer++;
         if (waveCompleteTimer > 60) {
             completeWave();
         }
+    } else {
+        waveCompleteTimer = 0;
     }
 
     // Check game over
@@ -324,12 +339,8 @@ function completeWave() {
 
     sound.play('powerup');
     wave++;
-    waveActive = false;
     updateUI();
-
-    setTimeout(() => {
-        spawnWave();
-    }, 2000);
+    spawnWave();
 }
 
 function endGame() {
