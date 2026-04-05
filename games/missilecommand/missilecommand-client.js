@@ -219,7 +219,7 @@ function update() {
 
         if (dist < m.speed) {
             // Reached target - explode
-            createExplosion(m.targetX, m.targetY, '#0ff', true);
+            createExplosion(m.targetX, m.targetY, '#00ffff', true);
             playerMissiles.splice(i, 1);
             sound.play('explosion');
         } else {
@@ -256,7 +256,7 @@ function update() {
             if (exp.playerExplosion && exp.growing) {
                 const expDist = Math.hypot(m.x - exp.x, m.y - exp.y);
                 if (expDist < exp.radius) {
-                    createExplosion(m.x, m.y, '#ff0', false);
+                    createExplosion(m.x, m.y, '#ffff00', false);
                     enemyMissiles.splice(i, 1);
                     score += 25 * wave;
                     sound.play('hit');
@@ -301,7 +301,7 @@ function update() {
 }
 
 function handleEnemyMissileHit(x, y) {
-    createExplosion(x, y, '#f00', false);
+    createExplosion(x, y, '#ff0000', false);
     sound.play('explosion');
 
     // Check if a city was hit
