@@ -365,6 +365,13 @@ function endGame() {
     sound.play('death');
 }
 
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function draw() {
     // Clear
     ctx.fillStyle = '#000';
@@ -456,8 +463,8 @@ function draw() {
     explosions.forEach(exp => {
         const gradient = ctx.createRadialGradient(exp.x, exp.y, 0, exp.x, exp.y, exp.radius);
         gradient.addColorStop(0, exp.color);
-        gradient.addColorStop(0.5, exp.color + '88');
-        gradient.addColorStop(1, exp.color + '00');
+        gradient.addColorStop(0.5, hexToRgba(exp.color, 0.53));
+        gradient.addColorStop(1, hexToRgba(exp.color, 0));
 
         ctx.fillStyle = gradient;
         ctx.beginPath();

@@ -225,11 +225,13 @@ function update() {
     }
 
     // Collision: player bullets vs invaders
-    bullets.forEach((bullet, bIdx) => {
-        if (!bullet.fromPlayer) return;
+    for (let bIdx = bullets.length - 1; bIdx >= 0; bIdx--) {
+        const bullet = bullets[bIdx];
+        if (!bullet.fromPlayer) continue;
 
-        invaders.forEach((inv, iIdx) => {
-            if (!inv.alive) return;
+        for (let iIdx = invaders.length - 1; iIdx >= 0; iIdx--) {
+            const inv = invaders[iIdx];
+            if (!inv.alive) continue;
 
             if (bullet.x > inv.x && bullet.x < inv.x + inv.width &&
                 bullet.y > inv.y && bullet.y < inv.y + inv.height) {
@@ -243,26 +245,38 @@ function update() {
                 }
                 scoreEl.textContent = `Score: ${score}`;
                 sound.play('explosion');
+                break;
             }
-        });
-    });
+        }
+    }
 
     // Collision: bullets vs bunkers
-    [...bullets, ...invaderBullets].forEach((bullet, bIdx) => {
-        bunkers.forEach((bunker, idx) => {
-            if (bunker.health <= 0) return;
-
+    for (let bIdx = bullets.length - 1; bIdx >= 0; bIdx--) {
+        const bullet = bullets[bIdx];
+        for (let bunkerIdx = bunkers.length - 1; bunkerIdx >= 0; bunkerIdx--) {
+            const bunker = bunkers[bunkerIdx];
+            if (bunker.health <= 0) continue;
             if (bullet.x > bunker.x && bullet.x < bunker.x + bunker.width &&
                 bullet.y > bunker.y && bullet.y < bunker.y + bunker.height) {
                 bunker.health--;
-                if (bullet.fromPlayer) {
-                    bullets.splice(bIdx, 1);
-                } else {
-                    invaderBullets.splice(bIdx - bullets.length, 1);
-                }
+                bullets.splice(bIdx, 1);
+                break;
             }
-        });
-    });
+        }
+    }
+    for (let bIdx = invaderBullets.length - 1; bIdx >= 0; bIdx--) {
+        const bullet = invaderBullets[bIdx];
+        for (let bunkerIdx = bunkers.length - 1; bunkerIdx >= 0; bunkerIdx--) {
+            const bunker = bunkers[bunkerIdx];
+            if (bunker.health <= 0) continue;
+            if (bullet.x > bunker.x && bullet.x < bunker.x + bunker.width &&
+                bullet.y > bunker.y && bullet.y < bunker.y + bunker.height) {
+                bunker.health--;
+                invaderBullets.splice(bIdx, 1);
+                break;
+            }
+        }
+    }
 
     // Collision: invader bullets vs player
     invaderBullets.forEach((bullet, idx) => {

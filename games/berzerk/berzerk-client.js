@@ -321,14 +321,48 @@ function update() {
             livesEl.textContent = `Lives: ${lives}`;
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
-            if (lives <= 0) {
-                gameOver = true;
-                statusEl.textContent = 'GAME OVER - Press R to restart';
-                statusEl.classList.add('disconnected');
+            sound.play('hit');
+            if (twoPlayerMode) {
+                if (currentPlayer === 1) {
+                    player1Lives = lives;
+                    player1Score = score;
+                } else {
+                    player2Lives = lives;
+                    player2Score = score;
+                }
+                if (lives <= 0) {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    if (currentPlayer === 1) {
+                        score = player1Score;
+                        lives = player1Lives;
+                    } else {
+                        score = player2Score;
+                        lives = player2Lives;
+                    }
+                    if (player1Lives <= 0 && player2Lives <= 0) {
+                        gameOver = true;
+                        statusEl.textContent = 'GAME OVER';
+                        statusEl.classList.add('disconnected');
+                        sound.play('death');
+                    } else {
+                        showTurnMessage = true;
+                        turnMessageTimer = 180;
+                        updateStatusDisplay();
+                    }
+                    scoreEl.textContent = `Score: ${score}`;
+                    livesEl.textContent = `Lives: ${lives}`;
+                }
             } else {
-                room++;
-                roomEl.textContent = `Room: ${room}`;
-                generateRoom();
+                if (lives <= 0) {
+                    gameOver = true;
+                    statusEl.textContent = 'GAME OVER - Press R to restart';
+                    statusEl.classList.add('disconnected');
+                    sound.play('death');
+                } else {
+                    room++;
+                    roomEl.textContent = `Room: ${room}`;
+                    generateRoom();
+                }
             }
         }
     }

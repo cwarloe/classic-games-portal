@@ -211,8 +211,10 @@ function update() {
     }
 
     // Collision: bullets vs enemies
-    bullets.forEach((bullet, bIdx) => {
-        enemies.forEach((enemy, eIdx) => {
+    for (let bIdx = bullets.length - 1; bIdx >= 0; bIdx--) {
+        for (let eIdx = enemies.length - 1; eIdx >= 0; eIdx--) {
+            const bullet = bullets[bIdx];
+            const enemy = enemies[eIdx];
             if (bullet.x > enemy.x - 10 && bullet.x < enemy.x + 30 &&
                 bullet.y > enemy.y - 10 && bullet.y < enemy.y + 30) {
                 bullets.splice(bIdx, 1);
@@ -225,9 +227,10 @@ function update() {
                 }
                 scoreEl.textContent = `Score: ${score}`;
                 sound.play('explosion');
+                break;
             }
-        });
-    });
+        }
+    }
 
     // Collision: enemy bullets vs player
     enemyBullets.forEach((bullet, idx) => {
