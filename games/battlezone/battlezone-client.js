@@ -348,7 +348,7 @@ class Battlezone {
                 const dz = bullet.z - enemy.z;
                 const dist = Math.sqrt(dx * dx + dz * dz);
 
-                if (dist < 3) {
+                if (dist < 5) {
                     // Hit!
                     this.bullets.splice(i, 1);
                     enemy.health--;
@@ -378,7 +378,7 @@ class Battlezone {
             const dz = bullet.z - this.player.z;
             const dist = Math.sqrt(dx * dx + dz * dz);
 
-            if (dist < 2) {
+            if (dist < 3) {
                 this.enemyBullets.splice(i, 1);
                 this.hitPlayer();
             }
@@ -551,19 +551,22 @@ class Battlezone {
         // Sort by depth (far to near)
         renderQueue.sort((a, b) => b.z - a.z);
 
-        // Render all objects
+        // Render all objects — project each to the ground plane first
+        const horizonY = centerY + 50;
+        const camH = 2.5; // camera height (matches renderGroundGrid)
         renderQueue.forEach(obj => {
             const screenX = centerX + (obj.x / obj.z) * fov;
-            const scale = fov / obj.z;
+            const scale = Math.min(fov / obj.z, 20); // cap so close objects don't explode
+            const groundY = horizonY + (camH / obj.z) * fov; // projected ground Y for this depth
 
             if (obj.type === 'mountain') {
-                this.renderMountain(ctx, screenX, centerY + 50, scale, obj.data);
+                this.renderMountain(ctx, screenX, horizonY, scale, obj.data);
             } else if (obj.type === 'enemy') {
-                this.renderEnemy(ctx, screenX, centerY, scale, obj.data, obj.x, obj.z);
+                this.renderEnemy(ctx, screenX, groundY, scale, obj.data, obj.x, obj.z);
             } else if (obj.type === 'bullet') {
-                this.renderBullet(ctx, screenX, centerY, scale);
+                this.renderBullet(ctx, screenX, groundY, scale);
             } else if (obj.type === 'enemyBullet') {
-                this.renderEnemyBullet(ctx, screenX, centerY, scale);
+                this.renderEnemyBullet(ctx, screenX, groundY, scale);
             }
         });
     }
@@ -634,39 +637,41 @@ class Battlezone {
     }
 
     renderEnemy(ctx, screenX, screenY, scale, enemy, relX, relZ) {
-        const size = 8 * scale;
-        const height = 10 * scale;
+        // screenY is the projected ground level — draw tank body upward from here
+        const size = Math.min(8 * scale, 80);
+        const height = Math.min(10 * scale, 100);
 
-        // Tank body (rectangular)
+        // Tank body — base at ground (screenY), extends upward
         ctx.beginPath();
-        ctx.rect(screenX - size, screenY - height / 2, size * 2, height);
+        ctx.rect(screenX - size, screenY - height, size * 2, height);
         ctx.stroke();
 
-        // Tank turret (triangular, pointing at player)
+        // Tank turret — mounted on upper body, points toward player
         const enemyAngleRel = Math.atan2(relX, relZ);
         const turretAngle = enemy.angle - this.player.angle - enemyAngleRel;
-        const turretLen = size * 1.5;
+        const turretLen = Math.min(size * 1.5, 60);
+        const turretBaseY = screenY - height * 0.55;
 
         ctx.beginPath();
-        ctx.moveTo(screenX, screenY);
+        ctx.moveTo(screenX, turretBaseY);
         ctx.lineTo(
             screenX + Math.sin(turretAngle) * turretLen,
-            screenY - Math.cos(turretAngle) * turretLen
+            turretBaseY - Math.cos(turretAngle) * turretLen
         );
         ctx.stroke();
 
-        // Tracks (wheels)
+        // Tracks — vertical panels along sides, full body height
         const trackOffset = size * 0.8;
         ctx.beginPath();
-        ctx.moveTo(screenX - trackOffset, screenY - height / 2);
-        ctx.lineTo(screenX - trackOffset, screenY + height / 2);
-        ctx.moveTo(screenX + trackOffset, screenY - height / 2);
-        ctx.lineTo(screenX + trackOffset, screenY + height / 2);
+        ctx.moveTo(screenX - trackOffset, screenY - height);
+        ctx.lineTo(screenX - trackOffset, screenY);
+        ctx.moveTo(screenX + trackOffset, screenY - height);
+        ctx.lineTo(screenX + trackOffset, screenY);
         ctx.stroke();
     }
 
     renderBullet(ctx, screenX, screenY, scale) {
-        const size = 2 * scale;
+        const size = Math.min(2 * scale, 8);
         ctx.fillStyle = '#0f0';
         ctx.globalAlpha = 0.9;
         ctx.beginPath();
@@ -676,7 +681,7 @@ class Battlezone {
     }
 
     renderEnemyBullet(ctx, screenX, screenY, scale) {
-        const size = 2 * scale;
+        const size = Math.min(2 * scale, 8);
         ctx.globalAlpha = 0.6;
         ctx.strokeStyle = '#f00';
         ctx.beginPath();
