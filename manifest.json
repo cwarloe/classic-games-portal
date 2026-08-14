@@ -20,14 +20,14 @@
     "multiplayer": "turn-based"
   },
   {
-    "id": "frogger",
-    "title": "Frogger",
-    "entry": "games/frogger/index.html",
+    "id": "battlezone",
+    "title": "Battlezone",
+    "entry": "games/battlezone/index.html",
     "system": "Arcade",
-    "year": 1981,
-    "tags": ["action", "classic"],
+    "year": 1980,
+    "tags": ["tank", "3d", "vector", "classic"],
     "author": "",
-    "multiplayer": "turn-based"
+    "multiplayer": false
   },
   {
     "id": "galaga",
@@ -40,14 +40,14 @@
     "multiplayer": "turn-based"
   },
   {
-    "id": "pacman",
-    "title": "Pac-Man",
-    "entry": "games/pacman/index.html",
+    "id": "missilecommand",
+    "title": "Missile Command",
+    "entry": "games/missilecommand/index.html",
     "system": "Arcade",
     "year": 1980,
-    "tags": ["action", "classic"],
+    "tags": ["strategy", "defense", "classic"],
     "author": "",
-    "multiplayer": "turn-based"
+    "multiplayer": false
   },
   {
     "id": "spaceinvaders",
@@ -58,25 +58,5 @@
     "tags": ["shooter", "classic"],
     "author": "",
     "multiplayer": "turn-based"
-  },
-  {
-    "id": "battlezone",
-    "title": "Battlezone",
-    "entry": "games/battlezone/index.html",
-    "system": "Arcade",
-    "year": 1980,
-    "tags": ["tank", "3d", "vector", "classic"],
-    "author": "",
-    "multiplayer": false
-  },
-  {
-    "id": "missilecommand",
-    "title": "Missile Command",
-    "entry": "games/missilecommand/index.html",
-    "system": "Arcade",
-    "year": 1980,
-    "tags": ["strategy", "defense", "classic"],
-    "author": "",
-    "multiplayer": false
   }
 ]

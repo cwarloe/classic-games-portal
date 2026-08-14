@@ -54,6 +54,10 @@ class Battlezone {
         // Input
         this.keys = {};
 
+        // Kill tracking for level progression
+        this.killCount = 0;
+        this.killsPerLevel = 10;
+
         // Setup
         this.setupInput();
         this.setupUI();
@@ -61,6 +65,7 @@ class Battlezone {
         // Start game
         this.lastTime = performance.now();
         this.gameLoop();
+        setTimeout(() => this.showLevelMessage('LEVEL 1'), 500);
     }
 
     generateMountains() {
@@ -121,6 +126,7 @@ class Battlezone {
         this.bullets = [];
         this.enemies = [];
         this.enemyBullets = [];
+        this.killCount = 0;
 
         document.getElementById('gameOver').style.display = 'none';
 
@@ -200,17 +206,7 @@ class Battlezone {
         // Check collisions
         this.checkCollisions();
 
-        // Check level completion
-        if (this.enemies.length === 0 && this.level < 10) {
-            // Small delay before next level
-            const allEnemiesDeadTime = this.allEnemiesDeadTime || performance.now();
-            if (performance.now() - allEnemiesDeadTime > 3000) {
-                this.nextLevel();
-                delete this.allEnemiesDeadTime;
-            } else {
-                this.allEnemiesDeadTime = allEnemiesDeadTime;
-            }
-        }
+        // Level progression handled by kill count in checkCollisions
     }
 
     updatePlayer(dt) {
@@ -360,7 +356,12 @@ class Battlezone {
                     if (enemy.health <= 0) {
                         this.enemies.splice(j, 1);
                         this.score += 100 * this.level;
+                        this.killCount++;
                         sound.play('explosion');
+                        if (this.killCount >= this.killsPerLevel) {
+                            this.killCount = 0;
+                            this.nextLevel();
+                        }
                     } else {
                         sound.play('hit');
                     }
@@ -473,6 +474,9 @@ class Battlezone {
         ctx.lineTo(width, centerY + 50);
         ctx.stroke();
 
+        // Draw perspective ground grid
+        this.renderGroundGrid(ctx, width, height, centerX, centerY, fov);
+
         // Collect all 3D objects to render (with depth sorting)
         const renderQueue = [];
 
@@ -564,6 +568,58 @@ class Battlezone {
         });
     }
 
+    renderGroundGrid(ctx, width, height, centerX, centerY, fov) {
+        const horizonY = centerY + 50;
+        const camH = 2.5; // camera height above ground plane
+        const cos = Math.cos(-this.player.angle);
+        const sin = Math.sin(-this.player.angle);
+
+        // Project a world-space ground point to screen coords
+        const project = (worldX, worldZ) => {
+            const dx = worldX - this.player.x;
+            const dz = worldZ - this.player.z;
+            const rx = dx * cos - dz * sin;
+            const rz = dx * sin + dz * cos;
+            if (rz < 0.5) return null;
+            return {
+                x: centerX + (rx / rz) * fov,
+                y: horizonY + (camH / rz) * fov
+            };
+        };
+
+        const drawLine = (x1, z1, x2, z2) => {
+            const a = project(x1, z1);
+            const b = project(x2, z2);
+            if (!a || !b) return;
+            if (a.y < horizonY && b.y < horizonY) return;
+            ctx.beginPath();
+            ctx.moveTo(a.x, Math.max(a.y, horizonY));
+            ctx.lineTo(b.x, Math.max(b.y, horizonY));
+            ctx.stroke();
+        };
+
+        ctx.save();
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 0.75;
+        ctx.globalAlpha = 0.18;
+
+        const G = 10;  // grid cell size in world units
+        const R = 9;   // radius in cells
+        const px = Math.round(this.player.x / G);
+        const pz = Math.round(this.player.z / G);
+
+        // Lines running in the Z direction (left/right grid lines)
+        for (let gx = px - R; gx <= px + R; gx++) {
+            drawLine(gx * G, (pz - R) * G, gx * G, (pz + R) * G);
+        }
+        // Lines running in the X direction (near/far grid lines)
+        for (let gz = pz - R; gz <= pz + R; gz++) {
+            drawLine((px - R) * G, gz * G, (px + R) * G, gz * G);
+        }
+
+        ctx.restore();
+    }
+
     renderMountain(ctx, screenX, screenY, scale, mountain) {
         const width = mountain.width * scale;
         const height = mountain.height * scale;
@@ -611,7 +667,8 @@ class Battlezone {
 
     renderBullet(ctx, screenX, screenY, scale) {
         const size = 2 * scale;
-        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#0f0';
+        ctx.globalAlpha = 0.9;
         ctx.beginPath();
         ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
         ctx.fill();
