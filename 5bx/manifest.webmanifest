@@ -1,0 +1,17 @@
+{
+  "name": "5BX — Five Basic Exercises",
+  "short_name": "5BX",
+  "description": "The RCAF 5BX plan: 11 minutes a day. Guided timer, level targets and progress tracking, entirely on your device.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#11161d",
+  "theme_color": "#11161d",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

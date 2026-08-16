@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#11161d" />
+<meta name="description" content="The RCAF 5BX plan — 11 minutes a day. Guided timer, progress tracking, offline." />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="5BX" />
+<title>5BX</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="app" hidden>
+
+  <!-- ============ HOME / LEVEL SELECT ============ -->
+  <section class="screen" id="screen-home">
+    <header class="topbar">
+      <h1 class="brand">5BX</h1>
+      <button class="icon-btn" data-go="reference" aria-label="Reference">?</button>
+    </header>
+
+    <div class="scroll">
+      <div id="suggestion" class="suggestion" hidden></div>
+
+      <div class="field">
+        <label class="field__label">Chart</label>
+        <div class="seg" id="chart-picker" role="group" aria-label="Chart"></div>
+        <p class="field__hint" id="chart-note"></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Level</label>
+        <div class="grid-levels" id="level-picker" role="group" aria-label="Level"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Today&rsquo;s targets</h2>
+        <ol class="targets" id="targets"></ol>
+        <p class="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Exercise 5</label>
+        <div class="seg seg--stack" id="ex5-picker" role="group" aria-label="Exercise 5 mode"></div>
+        <p class="field__hint" id="ex5-note"></p>
+      </div>
+
+      <div class="row-btns">
+        <button class="btn btn--ghost" data-go="history">History</button>
+        <button class="btn btn--ghost" data-go="reference">Reference</button>
+      </div>
+    </div>
+
+    <div class="dock">
+      <button class="btn btn--primary btn--xl" id="btn-start">Start workout</button>
+    </div>
+  </section>
+
+  <!-- ============ WORKOUT ============ -->
+  <section class="screen screen--work" id="screen-work" hidden>
+    <header class="topbar topbar--work">
+      <button class="icon-btn" id="btn-quit" aria-label="End workout">&times;</button>
+      <div class="work-meta"><span id="work-chart"></span></div>
+      <div class="elapsed" id="work-elapsed">0:00</div>
+    </header>
+
+    <div class="pips" id="pips" aria-hidden="true"></div>
+
+    <div class="work-body">
+      <p class="ex-num" id="ex-num">Exercise 1 of 5</p>
+      <h2 class="ex-name" id="ex-name"></h2>
+
+      <div class="target-big" id="target-big"></div>
+
+      <div class="clock" id="clock">2:00</div>
+
+      <div class="instructions" id="instructions"></div>
+    </div>
+
+    <div class="dock dock--work">
+      <button class="btn btn--ghost btn--sq" id="btn-prev" aria-label="Previous exercise">&#8676;</button>
+      <button class="btn btn--primary btn--wide" id="btn-pause">Pause</button>
+      <button class="btn btn--ghost btn--sq" id="btn-next" aria-label="Next exercise">&#8677;</button>
+    </div>
+  </section>
+
+  <!-- ============ FINISH / LOG ============ -->
+  <section class="screen" id="screen-done" hidden>
+    <header class="topbar"><h1 class="brand">Session complete</h1></header>
+    <div class="scroll">
+      <div class="done-summary" id="done-summary"></div>
+
+      <div class="card">
+        <h2 class="card__title">Did you complete all the required movements within 11 minutes?</h2>
+        <p class="card__sub">This is the plan&rsquo;s rule for moving up a level.</p>
+        <div class="seg seg--stack" id="done-picker" role="group">
+          <button class="seg__btn" data-done="yes">Yes &mdash; all reps, inside the time</button>
+          <button class="seg__btn" data-done="no">Not yet</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="notes">Notes <span class="opt">(optional)</span></label>
+        <textarea id="notes" rows="3" placeholder="How did it feel?"></textarea>
+      </div>
+    </div>
+    <div class="dock dock--split">
+      <button class="btn btn--ghost" id="btn-discard">Discard</button>
+      <button class="btn btn--primary" id="btn-save">Save session</button>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section class="screen" id="screen-history" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Back">&#8592;</button>
+      <h1 class="brand">History</h1>
+      <button class="icon-btn" id="btn-export" aria-label="Export data">&#8681;</button>
+    </header>
+    <div class="scroll">
+      <div class="stats" id="stats"></div>
+      <div class="card">
+        <h2 class="card__title">Level progression</h2>
+        <div id="progress-chart"></div>
+      </div>
+      <h2 class="list-head">Sessions</h2>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+
+  <!-- ============ REFERENCE ============ -->
+  <section class="screen" id="screen-reference" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Back">&#8592;</button>
+      <h1 class="brand">Reference</h1>
+    </header>
+    <div class="scroll" id="reference-body"></div>
+  </section>
+
+</div>
+
+<div id="boot" class="boot">Loading&hellip;</div>
+
+<script src="app.js"></script>
+</body>
+</html>

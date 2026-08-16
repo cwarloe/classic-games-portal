@@ -1,0 +1,486 @@
+{
+  "$comment": "5BX plan data, transcribed from the original RCAF booklet (Information Canada, Ottawa, 1965; reprinted 1968/1970/1973/1975). Every number below was read directly from the 'Physical Capacity Rating Scale' tables on booklet pages 20, 22, 24, 26, 28 and 30. Chart 3 appears twice in the booklet (pages 17 and 24) and both printings agree. Safe to hand-edit: reps arrays are always [ex1, ex2, ex3, ex4] and 'steps' is exercise 5.",
+  "meta": {
+    "title": "5BX Plan",
+    "subtitle": "Five Basic Exercises",
+    "author": "Dr. Bill Orban",
+    "publisher": "Royal Canadian Air Force",
+    "sourceEdition": "Information Canada, Ottawa, 1965 (reprinted 1968, 1970, 1973, 1975)",
+    "totalSessionMinutes": 11,
+    "transcribedFrom": "Scanned original booklet, pages 16-32",
+    "verified": true
+  },
+
+  "levelOrder": ["D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"],
+
+  "$comment_levelOrder": "Ascending difficulty. The printed tables list levels in the reverse order (A+ at the top). Progression runs D- -> A+ within a chart, then on to D- of the next chart.",
+
+  "timing": {
+    "secondsPerExercise": [120, 60, 60, 60, 360],
+    "totalSeconds": 660,
+    "note": "The allotted time for each exercise is the same throughout all six charts. Total time for exercises 1 through 5 is 11 minutes. The booklet notes that in the early stages an individual may complete some exercises in less than the allotted time while others take longer; the times may be varied within the total 11 minute period."
+  },
+
+  "rules": {
+    "start": "Start at the lowest Physical Capacity Level of Chart 1 (D-).",
+    "progression": "Move upward on the same chart to the next level only after you can complete all the required movements at your present level within 11 minutes. Continue to progress upward in this manner until you can complete all the required movements at level A+ within 11 minutes. Now start at the bottom of the next chart (D-), and continue in this fashion upwards through the levels, and from chart to chart, until you reach the level for your age group.",
+    "example": "Age 35-39 (B on Chart 3) is 32 levels from D- on Chart 1.",
+    "maintenance": "It may take 6, 8, 10 months or more of daily exercise to attain the level recommended for you, but once you have attained it, only 3 periods of exercise per week will maintain that level of physical capacity.",
+    "caution": "Even if you feel able to start at a high level and progress at a faster rate than indicated - DON'T DO IT. Start at the bottom of Chart 1 and work up from level to level as recommended. If you feel stiff or sore, or if you are unduly breathless at any time, ease up and slow down your rate of progression. This is particularly applicable to the older age groups.",
+    "layoff": "If for any reason (illness, etc.) you stop doing 5BX regularly and you wish to begin again, do not recommence at the level you had attained previously. Do drop back several levels - until you find one you can do without undue strain. After a period of inactivity of longer than two months, or one month if caused by illness, it is recommended that you start again at Chart 1.",
+    "goalGuidance": "Each age group is given a Physical Capacity level to attain; that is, a goal which they should try to reach. The Physical Capacity levels in this plan are based on the expectation of average individuals. With every average, there are individuals who surpass it, and those who fall below it. If you feel able to move further through the charts than your Physical Capacity level, by all means do so. If, on the contrary, you experience great difficulty in approaching this level you should stop at a level which you feel to be within your capability. It is impossible to predict accurately a level for each individual who uses this program. Use the goals as guides, and apply them with common sense."
+  },
+
+  "maxRateOfProgression": {
+    "$comment": "Printed as 'Maximum Rate of Progression Through Chart 1 According to Age' (booklet page 18). Minimum days to spend at each level.",
+    "table": [
+      { "ageMin": 0,  "ageMax": 20, "label": "20 years or under", "minDaysPerLevel": 1 },
+      { "ageMin": 20, "ageMax": 29, "label": "20-29 years",       "minDaysPerLevel": 2 },
+      { "ageMin": 30, "ageMax": 39, "label": "30-39 years",       "minDaysPerLevel": 4 },
+      { "ageMin": 40, "ageMax": 49, "label": "40-49 years",       "minDaysPerLevel": 7 },
+      { "ageMin": 50, "ageMax": 59, "label": "50-59 years",       "minDaysPerLevel": 8 },
+      { "ageMin": 60, "ageMax": 200, "label": "60 years and over", "minDaysPerLevel": 10 }
+    ]
+  },
+
+  "exerciseShortNames": [
+    "Toe touching",
+    "Sit-up",
+    "Back extension",
+    "Push-up",
+    "Stationary run"
+  ],
+
+  "tipCountingSteps": "Counting the steps in exercise 5 can be difficult. Divide the total number of steps required by 75 and note the answer - place a row of buttons, corresponding in number to this answer, on a handy table or chair. Now count off your first 75 steps, do your ten required movements, and move the first button. Repeat until all the buttons have been removed, finishing up with any left over steps.",
+
+  "substitutionNote": "Exercise 5 is running on the spot. Two activities may be substituted for it however, and if you prefer, you may run or walk the recommended distance in the required time in place of the stationary run of exercise 5.",
+
+  "charts": [
+    {
+      "id": 1,
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching",
+          "start": "Feet astride, arms upward.",
+          "movement": "Forward bend to floor touching then stretch upward and backward bend.",
+          "notes": ["Do not strain to keep knees straight."]
+        },
+        {
+          "n": 2,
+          "name": "Partial sit-up",
+          "start": "Back lying, feet 6\" apart, arms at sides.",
+          "movement": "Sit up just far enough to see your heels.",
+          "notes": ["Keep legs straight, head and shoulders must clear the floor."]
+        },
+        {
+          "n": 3,
+          "name": "Alternate leg raise",
+          "start": "Front lying, palms placed under the thighs.",
+          "movement": "Raise head and one leg, repeat using legs alternately.",
+          "notes": [
+            "Keep leg straight at the knee, thighs must clear the palms.",
+            "Count one each time second leg touches floor."
+          ]
+        },
+        {
+          "n": 4,
+          "name": "Knee push-up",
+          "start": "Front lying, hands under the shoulders, palms flat on the floor.",
+          "movement": "Straighten arms lifting upper body, keeping the knees on the floor. Bend arms to lower body.",
+          "notes": ["Keep body straight from the knees, arms must be fully extended, chest must touch floor to complete one movement."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift feet approximately 4 inches off floor.",
+          "movement": "Every 75 steps do 10 \"scissor jumps\". Repeat this sequence until required number of steps is completed.",
+          "notes": [
+            "Scissor jumps - Stand with right leg and left arm extended forward, and left leg and right arm extended backward.",
+            "Jump up - change position of arms and legs before landing. Repeat (arms shoulder high)."
+          ],
+          "jumpName": "scissor jumps",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "½ mile run", "walkLabel": "1 mile walk" },
+      "ageGroups": [
+        { "label": "6 yrs", "level": "B" },
+        { "label": "7 yrs", "level": "A" }
+      ],
+      "levels": {
+        "D-": { "reps": [2, 3, 4, 2],     "steps": 100, "runSeconds": 480, "runDisplay": "8",     "walkSeconds": 1260, "walkDisplay": "21" },
+        "D":  { "reps": [3, 4, 5, 3],     "steps": 145, "runSeconds": 450, "runDisplay": "7½", "walkSeconds": 1260, "walkDisplay": "21" },
+        "D+": { "reps": [4, 5, 6, 3],     "steps": 175, "runSeconds": 420, "runDisplay": "7",     "walkSeconds": 1200, "walkDisplay": "20" },
+        "C-": { "reps": [6, 7, 8, 4],     "steps": 205, "runSeconds": 390, "runDisplay": "6½", "walkSeconds": 1140, "walkDisplay": "19" },
+        "C":  { "reps": [7, 8, 10, 5],    "steps": 235, "runSeconds": 390, "runDisplay": "6½", "walkSeconds": 1140, "walkDisplay": "19" },
+        "C+": { "reps": [8, 9, 12, 6],    "steps": 260, "runSeconds": 390, "runDisplay": "6½", "walkSeconds": 1140, "walkDisplay": "19" },
+        "B-": { "reps": [10, 11, 13, 7],  "steps": 280, "runSeconds": 360, "runDisplay": "6",     "walkSeconds": 1080, "walkDisplay": "18" },
+        "B":  { "reps": [12, 12, 14, 8],  "steps": 305, "runSeconds": 360, "runDisplay": "6",     "walkSeconds": 1080, "walkDisplay": "18" },
+        "B+": { "reps": [14, 13, 15, 9],  "steps": 320, "runSeconds": 360, "runDisplay": "6",     "walkSeconds": 1080, "walkDisplay": "18" },
+        "A-": { "reps": [16, 15, 16, 11], "steps": 335, "runSeconds": 330, "runDisplay": "5½", "walkSeconds": 1020, "walkDisplay": "17" },
+        "A":  { "reps": [18, 17, 17, 12], "steps": 375, "runSeconds": 330, "runDisplay": "5½", "walkSeconds": 1020, "walkDisplay": "17" },
+        "A+": { "reps": [20, 18, 18, 13], "steps": 400, "runSeconds": 330, "runDisplay": "5½", "walkSeconds": 1020, "walkDisplay": "17" }
+      }
+    },
+
+    {
+      "id": 2,
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching",
+          "start": "Feet astride, arms upward.",
+          "movement": "Touch floor and press (bounce) once then stretch upward and backward bend.",
+          "notes": ["Do not strain to keep knees straight."]
+        },
+        {
+          "n": 2,
+          "name": "Sit-up",
+          "start": "Back lying, feet 6\" apart, arms at sides.",
+          "movement": "\"Sit up\" to vertical position, keep feet on floor even if it is necessary to hook them under a chair.",
+          "notes": ["Allow knees to bend slightly."]
+        },
+        {
+          "n": 3,
+          "name": "Back extension",
+          "start": "Front lying, palms placed under thighs.",
+          "movement": "Raise head, shoulders, and both legs.",
+          "notes": ["Keep legs straight, both thighs must clear the palms."]
+        },
+        {
+          "n": 4,
+          "name": "Push-up",
+          "start": "Front lying, hands under the shoulder, palms flat on floor.",
+          "movement": "Straighten arms to lift body with only palms and toes on the floor. Back straight.",
+          "notes": ["Chest must touch floor for each completed movement after arms have been fully extended."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift feet approximately 4 inches off floor.",
+          "movement": "After every 75 steps, do 10 \"astride jumps\". Repeat this sequence until required number of steps is completed.",
+          "notes": [
+            "Astride jumps - feet together, arms at side.",
+            "Jump and land with feet astride and arms raised sideways to slightly above shoulder height. Return with a jump to the starting position for count of one.",
+            "Keep arms straight."
+          ],
+          "jumpName": "astride jumps",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
+      "ageGroups": [
+        { "label": "8 yrs", "level": "D-" },
+        { "label": "9 yrs", "level": "C-" },
+        { "label": "10 yrs", "level": "B-" },
+        { "label": "11 yrs", "level": "A-" },
+        { "label": "45-49 yrs", "level": "A+" },
+        { "label": "50-60 yrs", "level": "C+" }
+      ],
+      "levels": {
+        "D-": { "reps": [14, 10, 13, 9],  "steps": 335, "runSeconds": 630, "runDisplay": "10½", "walkSeconds": 2100, "walkDisplay": "35" },
+        "D":  { "reps": [15, 11, 14, 10], "steps": 360, "runSeconds": 630, "runDisplay": "10½", "walkSeconds": 2100, "walkDisplay": "35" },
+        "D+": { "reps": [16, 12, 15, 11], "steps": 380, "runSeconds": 630, "runDisplay": "10½", "walkSeconds": 2100, "walkDisplay": "35" },
+        "C-": { "reps": [18, 13, 17, 12], "steps": 395, "runSeconds": 600, "runDisplay": "10",      "walkSeconds": 2040, "walkDisplay": "34" },
+        "C":  { "reps": [19, 14, 19, 13], "steps": 410, "runSeconds": 600, "runDisplay": "10",      "walkSeconds": 2040, "walkDisplay": "34" },
+        "C+": { "reps": [20, 15, 21, 14], "steps": 425, "runSeconds": 600, "runDisplay": "10",      "walkSeconds": 2040, "walkDisplay": "34" },
+        "B-": { "reps": [22, 16, 23, 15], "steps": 440, "runSeconds": 570, "runDisplay": "9½",  "walkSeconds": 1980, "walkDisplay": "33" },
+        "B":  { "reps": [24, 17, 25, 16], "steps": 445, "runSeconds": 570, "runDisplay": "9½",  "walkSeconds": 1980, "walkDisplay": "33" },
+        "B+": { "reps": [26, 18, 27, 17], "steps": 455, "runSeconds": 570, "runDisplay": "9½",  "walkSeconds": 1980, "walkDisplay": "33" },
+        "A-": { "reps": [28, 20, 29, 18], "steps": 470, "runSeconds": 540, "runDisplay": "9",       "walkSeconds": 1920, "walkDisplay": "32" },
+        "A":  { "reps": [29, 21, 31, 19], "steps": 485, "runSeconds": 540, "runDisplay": "9",       "walkSeconds": 1860, "walkDisplay": "31" },
+        "A+": { "reps": [30, 23, 33, 20], "steps": 500, "runSeconds": 540, "runDisplay": "9",       "walkSeconds": 1800, "walkDisplay": "30" }
+      }
+    },
+
+    {
+      "id": 3,
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching",
+          "start": "Feet astride, arms upward.",
+          "movement": "Touch floor 6\" outside left foot, again between feet and press once then 6\" outside right foot, bend backward as far as possible, repeat, reverse direction after half the number of counts.",
+          "notes": ["Do not strain to keep knees straight, return to erect position."]
+        },
+        {
+          "n": 2,
+          "name": "Sit-up, hands behind head",
+          "start": "Back lying, feet 6\" apart, arms clasped behind head. Allow knees to bend slightly.",
+          "movement": "Sit up to vertical position, keep feet on floor, hook feet under chair, etc., only if necessary.",
+          "notes": []
+        },
+        {
+          "n": 3,
+          "name": "Back extension, hands behind back",
+          "start": "Front lying, hands interlocked behind the back.",
+          "movement": "Lift head, shoulders, chest and both legs as high as possible.",
+          "notes": ["Keep legs straight, and raise chest and both thighs completely off floor."]
+        },
+        {
+          "n": 4,
+          "name": "Chin-forehead push-up",
+          "start": "Front lying, hands under the shoulders, palms flat on floor.",
+          "movement": "Touch chin to floor in front of hands - touch forehead to floor behind hands before returning to up position.",
+          "notes": ["There are three definite movements: chin, forehead, arms straightened. DO NOT do in one continuous movement."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift feet approximately 4 inches off floor.",
+          "movement": "After every 75 steps do 10 \"half knee bends\". Repeat this sequence until required number of steps is completed.",
+          "notes": [
+            "Half knee bends - Feet together, hands on hips, knees bent to form an angle of about 110 degrees. Do not bend knees past a right angle.",
+            "Straighten to upright position, raising heel off floor, return to starting position each time.",
+            "Keep feet in contact with floor - the back upright and straight at all times."
+          ],
+          "jumpName": "half knee bends",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
+      "ageGroups": [
+        { "label": "12 yrs", "level": "D+" },
+        { "label": "13 yrs", "level": "C+" },
+        { "label": "14 yrs", "level": "B+" },
+        { "label": "35-39 yrs", "level": "B" },
+        { "label": "40-44 yrs", "level": "C" }
+      ],
+      "flyingCrew": [
+        { "label": "40-44 yrs", "level": "A+" },
+        { "label": "45-49 yrs", "level": "B" }
+      ],
+      "levels": {
+        "D-": { "reps": [24, 20, 29, 15], "steps": 400, "runSeconds": 525, "runDisplay": "8¾", "walkSeconds": 1740, "walkDisplay": "29" },
+        "D":  { "reps": [24, 21, 30, 15], "steps": 415, "runSeconds": 525, "runDisplay": "8¾", "walkSeconds": 1680, "walkDisplay": "28" },
+        "D+": { "reps": [24, 22, 31, 15], "steps": 430, "runSeconds": 525, "runDisplay": "8¾", "walkSeconds": 1680, "walkDisplay": "28" },
+        "C-": { "reps": [26, 23, 33, 16], "steps": 450, "runSeconds": 510, "runDisplay": "8½", "walkSeconds": 1620, "walkDisplay": "27" },
+        "C":  { "reps": [26, 24, 34, 17], "steps": 465, "runSeconds": 510, "runDisplay": "8½", "walkSeconds": 1620, "walkDisplay": "27" },
+        "C+": { "reps": [26, 25, 35, 17], "steps": 480, "runSeconds": 510, "runDisplay": "8½", "walkSeconds": 1620, "walkDisplay": "27" },
+        "B-": { "reps": [28, 26, 37, 18], "steps": 490, "runSeconds": 495, "runDisplay": "8¼", "walkSeconds": 1560, "walkDisplay": "26" },
+        "B":  { "reps": [28, 27, 39, 19], "steps": 500, "runSeconds": 495, "runDisplay": "8¼", "walkSeconds": 1560, "walkDisplay": "26" },
+        "B+": { "reps": [28, 28, 41, 20], "steps": 510, "runSeconds": 495, "runDisplay": "8¼", "walkSeconds": 1560, "walkDisplay": "26" },
+        "A-": { "reps": [30, 30, 43, 21], "steps": 525, "runSeconds": 480, "runDisplay": "8",     "walkSeconds": 1500, "walkDisplay": "25" },
+        "A":  { "reps": [30, 31, 45, 22], "steps": 540, "runSeconds": 480, "runDisplay": "8",     "walkSeconds": 1500, "walkDisplay": "25" },
+        "A+": { "reps": [30, 32, 47, 24], "steps": 550, "runSeconds": 480, "runDisplay": "8",     "walkSeconds": 1500, "walkDisplay": "25" }
+      }
+    },
+
+    {
+      "id": 4,
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching, circle bend",
+          "start": "Feet astride, arms upward.",
+          "movement": "Touch floor outside left foot, between feet, press once then outside right foot, circle bend backwards as far as possible, reverse direction after half the number of counts.",
+          "notes": [
+            "Do not strain to keep knees straight.",
+            "Keep arms above head and make full circle, bending backward past vertical each time."
+          ]
+        },
+        {
+          "n": 2,
+          "name": "Sit-up, toe touch",
+          "start": "Back lying, legs straight, feet together, arms straight overhead.",
+          "movement": "Sit up and touch the toes keeping the arms and legs straight. Use chair to hook feet under only if necessary.",
+          "notes": [
+            "Keep arms in contact with the sides of the head throughout the movement.",
+            "Allow knees to bend slightly."
+          ]
+        },
+        {
+          "n": 3,
+          "name": "Back extension, arms sideways",
+          "start": "Front lying, hands and arms stretched sideways.",
+          "movement": "Lift head, shoulders, arms, chest and both legs as high as possible.",
+          "notes": ["Keep legs straight, raise chest and both thighs completely off floor."]
+        },
+        {
+          "n": 4,
+          "name": "Wide-hand push-up",
+          "start": "Front lying, palms of hands flat on floor, approximately 1 foot from ears directly to side of head.",
+          "movement": "Straighten arms to lift body.",
+          "notes": ["Chest must touch floor for each completed movement."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift knees waist high.",
+          "movement": "Every 75 steps do 10 \"semi-squat jumps\". Repeat this sequence until required number of steps is completed.",
+          "notes": [
+            "Semi-squat jumps - Drop to a half crouch position with hands on knees and arms straight, keep back as straight as possible, right foot slightly ahead of left.",
+            "Jump to upright position with body straight and feet leaving floor. Reverse position of feet before landing. Return to half crouch position and repeat."
+          ],
+          "jumpName": "semi-squat jumps",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
+      "ageGroups": [
+        { "label": "15 yrs", "level": "D-" },
+        { "label": "16-17 yrs", "level": "C+" },
+        { "label": "25-29 yrs", "level": "A+" },
+        { "label": "30-34 yrs", "level": "C-" }
+      ],
+      "flyingCrew": [
+        { "label": "30-34 yrs", "level": "B" },
+        { "label": "35-39 yrs", "level": "C-" }
+      ],
+      "levels": {
+        "D-": { "reps": [24, 18, 40, 17], "steps": 300, "runSeconds": 465, "runDisplay": "7¾", "walkSeconds": 1380, "walkDisplay": "23" },
+        "D":  { "reps": [24, 18, 40, 19], "steps": 315, "runSeconds": 465, "runDisplay": "7¾", "walkSeconds": 1380, "walkDisplay": "23" },
+        "D+": { "reps": [24, 18, 41, 21], "steps": 325, "runSeconds": 465, "runDisplay": "7¾", "walkSeconds": 1380, "walkDisplay": "23" },
+        "C-": { "reps": [26, 19, 43, 24], "steps": 335, "runSeconds": 450, "runDisplay": "7½", "walkSeconds": 1260, "walkDisplay": "21" },
+        "C":  { "reps": [26, 19, 43, 26], "steps": 345, "runSeconds": 450, "runDisplay": "7½", "walkSeconds": 1260, "walkDisplay": "21" },
+        "C+": { "reps": [26, 19, 44, 28], "steps": 355, "runSeconds": 450, "runDisplay": "7½", "walkSeconds": 1260, "walkDisplay": "21" },
+        "B-": { "reps": [28, 21, 46, 30], "steps": 365, "runSeconds": 435, "runDisplay": "7¼", "walkSeconds": 1200, "walkDisplay": "20" },
+        "B":  { "reps": [28, 21, 46, 32], "steps": 375, "runSeconds": 435, "runDisplay": "7¼", "walkSeconds": 1200, "walkDisplay": "20" },
+        "B+": { "reps": [28, 21, 47, 34], "steps": 380, "runSeconds": 435, "runDisplay": "7¼", "walkSeconds": 1200, "walkDisplay": "20" },
+        "A-": { "reps": [30, 22, 49, 37], "steps": 390, "runSeconds": 420, "runDisplay": "7",     "walkSeconds": 1140, "walkDisplay": "19" },
+        "A":  { "reps": [30, 22, 49, 40], "steps": 395, "runSeconds": 420, "runDisplay": "7",     "walkSeconds": 1140, "walkDisplay": "19" },
+        "A+": { "reps": [30, 22, 50, 42], "steps": 400, "runSeconds": 420, "runDisplay": "7",     "walkSeconds": 1140, "walkDisplay": "19" }
+      }
+    },
+
+    {
+      "id": 5,
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching, hands clasped",
+          "start": "Feet astride, arms upward, hands clasped, arms straight.",
+          "movement": "Touch floor outside left foot, between feet, press once then outside right foot, circle bend backwards as far as possible. Reverse direction after half the number of counts.",
+          "notes": ["Do not strain to keep knees straight."]
+        },
+        {
+          "n": 2,
+          "name": "Sit-up with twist",
+          "start": "Back lying, legs straight, feet together, hands clasped behind head.",
+          "movement": "Sit up and raise legs in bent position at same time twist to touch right elbow to left knee. This completes one movement. Alternate the direction of twist each time.",
+          "notes": ["Keep feet off floor when elbow touches knee."]
+        },
+        {
+          "n": 3,
+          "name": "Back extension, arms overhead",
+          "start": "Front lying, arms extended overhead.",
+          "movement": "Raise arms, head, chest and both legs as high as possible.",
+          "notes": ["Keep legs and arms straight, chest and both thighs completely off floor."]
+        },
+        {
+          "n": 4,
+          "name": "Clap push-up",
+          "start": "Front lying, hands under shoulder, palms flat on floor.",
+          "movement": "Push off floor and clap hands before returning to starting position.",
+          "notes": ["Keep body straight during the entire movement. Hand clap must be heard."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift knees waist high.",
+          "movement": "Every 75 steps do 10 \"semi-spread eagle jumps\". Repeat this sequence until required number of steps is completed.",
+          "notes": [
+            "Semi-spread eagle jumps - Feet together, drop to a half crouch position hands on knees with arms straight.",
+            "Jump up to feet astride swing arms overhead in mid-air, return directly to starting position on landing.",
+            "Raise hands above head level, spread feet at least shoulder width apart in astride position before landing with feet together."
+          ],
+          "jumpName": "semi-spread eagle jumps",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "1 mile run", "walkLabel": null },
+      "ageGroups": [
+        { "label": "18-25 yrs", "level": "C" }
+      ],
+      "flyingCrew": [
+        { "label": "Under 25 yrs", "level": "B+" },
+        { "label": "25-29 yrs", "level": "D+" }
+      ],
+      "levels": {
+        "D-": { "reps": [24, 26, 39, 30], "steps": 375, "runSeconds": 420, "runDisplay": "7:00" },
+        "D":  { "reps": [24, 27, 40, 31], "steps": 385, "runSeconds": 411, "runDisplay": "6:51" },
+        "D+": { "reps": [24, 28, 41, 32], "steps": 400, "runSeconds": 405, "runDisplay": "6:45" },
+        "C-": { "reps": [26, 30, 42, 34], "steps": 410, "runSeconds": 399, "runDisplay": "6:39" },
+        "C":  { "reps": [26, 31, 43, 35], "steps": 420, "runSeconds": 393, "runDisplay": "6:33" },
+        "C+": { "reps": [26, 32, 44, 36], "steps": 435, "runSeconds": 387, "runDisplay": "6:27" },
+        "B-": { "reps": [28, 34, 45, 38], "steps": 445, "runSeconds": 381, "runDisplay": "6:21" },
+        "B":  { "reps": [28, 35, 46, 39], "steps": 455, "runSeconds": 375, "runDisplay": "6:15" },
+        "B+": { "reps": [28, 36, 47, 40], "steps": 465, "runSeconds": 372, "runDisplay": "6:12" },
+        "A-": { "reps": [30, 38, 48, 42], "steps": 475, "runSeconds": 369, "runDisplay": "6:09" },
+        "A":  { "reps": [30, 39, 49, 43], "steps": 485, "runSeconds": 366, "runDisplay": "6:06" },
+        "A+": { "reps": [30, 40, 50, 44], "steps": 500, "runSeconds": 360, "runDisplay": "6:00" }
+      }
+    },
+
+    {
+      "id": 6,
+      "note": "Physical capacities in this chart are usually found only in champion athletes.",
+      "exercises": [
+        {
+          "n": 1,
+          "name": "Toe touching, reverse clasp",
+          "start": "Feet astride, arms upward, hands reverse clasped, arms straight.",
+          "movement": "Touch floor outside left foot, between feet, press once then outside right foot, circle bend backwards as far as possible. Reverse direction after half the number of counts.",
+          "notes": ["Keep hands tightly reverse clasped at all times."]
+        },
+        {
+          "n": 2,
+          "name": "Pike sit-up",
+          "start": "Back lying, legs straight, feet together, arms straight over the head.",
+          "movement": "Sit up and at the same time lifting both legs to touch the toes in a pike (V) position.",
+          "notes": ["Keep feet together, legs and arms straight, all of the upper back and legs clear floor, fingers touch toes each time."]
+        },
+        {
+          "n": 3,
+          "name": "Back extension with press",
+          "start": "Front lying, arms extended over head.",
+          "movement": "Raise arms, head, chest and both legs as high as possible then press back once.",
+          "notes": ["Keep legs and arms straight - chest and both thighs completely off floor."]
+        },
+        {
+          "n": 4,
+          "name": "Chest-slap push-up",
+          "start": "Front lying, hands under shoulders, palms flat on floor.",
+          "movement": "Push off floor and slap chest before returning to starting position.",
+          "notes": ["Keep body straight during the entire movement, chest slap must be heard."]
+        },
+        {
+          "n": 5,
+          "name": "Stationary run",
+          "start": "Count a step each time left foot touches floor. Lift knees waist high.",
+          "movement": "Every 75 steps do 10 \"jack jumps\". Repeat this until required number of steps is completed.",
+          "notes": [
+            "Jack jumps - Feet together, knees bent, sit on heels, finger tips touch floor.",
+            "Jump up, raise legs waist high, keep legs straight and touch toes in midair.",
+            "Keep legs straight, raise feet level to \"standing waist height\". Touch toes each time."
+          ],
+          "jumpName": "jack jumps",
+          "jumpEvery": 75,
+          "jumpCount": 10
+        }
+      ],
+      "alternatives": { "runLabel": "1 mile run", "walkLabel": null },
+      "ageGroups": [],
+      "levels": {
+        "D-": { "reps": [24, 35, 29, 26], "steps": 450, "runSeconds": 360, "runDisplay": "6:00" },
+        "D":  { "reps": [24, 36, 30, 27], "steps": 460, "runSeconds": 351, "runDisplay": "5:51" },
+        "D+": { "reps": [24, 37, 31, 28], "steps": 475, "runSeconds": 345, "runDisplay": "5:45" },
+        "C-": { "reps": [26, 39, 32, 30], "steps": 485, "runSeconds": 339, "runDisplay": "5:39" },
+        "C":  { "reps": [26, 40, 33, 31], "steps": 495, "runSeconds": 333, "runDisplay": "5:33" },
+        "C+": { "reps": [26, 41, 34, 32], "steps": 505, "runSeconds": 327, "runDisplay": "5:27" },
+        "B-": { "reps": [28, 43, 35, 34], "steps": 515, "runSeconds": 324, "runDisplay": "5:24" },
+        "B":  { "reps": [28, 44, 36, 35], "steps": 525, "runSeconds": 318, "runDisplay": "5:18" },
+        "B+": { "reps": [28, 45, 37, 36], "steps": 530, "runSeconds": 312, "runDisplay": "5:12" },
+        "A-": { "reps": [30, 47, 38, 38], "steps": 555, "runSeconds": 309, "runDisplay": "5:09" },
+        "A":  { "reps": [30, 48, 39, 39], "steps": 580, "runSeconds": 303, "runDisplay": "5:03" },
+        "A+": { "reps": [30, 50, 40, 40], "steps": 600, "runSeconds": 300, "runDisplay": "5:00" }
+      }
+    }
+  ]
+}
