@@ -173,16 +173,32 @@
       } catch (e) {}
     },
 
-    say: function (text, opts) {
-      if (!Voice.supported || !prefs || !prefs.voiceCues || !text) return;
+    // onEnd fires when the utterance finishes. speechSynthesis 'end' is
+    // unreliable on some platforms, so a timeout always releases the caller.
+    say: function (text, onEnd) {
+      var done = false;
+      var finish = function () {
+        if (done) return;
+        done = true;
+        if (onEnd) onEnd();
+      };
+      if (!Voice.supported || !prefs || !prefs.voiceCues || !text) {
+        finish();
+        return;
+      }
       try {
-        if (!opts || !opts.queue) window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(text);
         if (Voice.voice) u.voice = Voice.voice;
         u.rate = 1.05;
         u.pitch = 1;
+        u.onend = finish;
+        u.onerror = finish;
         window.speechSynthesis.speak(u);
-      } catch (e) {}
+        // ~0.4s per word, floor 1.5s, ceiling 6s.
+        var guess = Math.min(6000, Math.max(1500, text.split(/\s+/).length * 400));
+        setTimeout(finish, guess + 1200);
+      } catch (e) { finish(); }
     },
 
     stop: function () {
@@ -207,7 +223,7 @@
 
   /* ============================ navigation ============================ */
 
-  var SCREENS = ['welcome', 'home', 'picker', 'preview', 'work', 'done', 'history', 'reference', 'settings'];
+  var SCREENS = ['splash', 'welcome', 'home', 'picker', 'preview', 'work', 'done', 'history', 'reference', 'settings'];
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -744,8 +760,9 @@
     }
   };
 
-  // Exposed for debugging a timing-sensitive feature from the console.
+  // Exposed for debugging timing-sensitive behaviour from the console.
   window.__metro = Metro;
+  Object.defineProperty(window, '__run', { get: function () { return run; } });
 
   function paintMetro() {
     if (!run) return;
@@ -781,13 +798,6 @@
            prefs.ex5Mode === 'stationary';
   }
 
-  function announceStep() {
-    var s = run.steps[run.i];
-    if (!s) return;
-    var what = 'Exercise ' + (run.i + 1) + '. ' + s.ex.name + '. ' + s.target + '.';
-    Voice.say(what);
-  }
-
   function startWorkout() {
     initAudio();
     beep(1);
@@ -798,17 +808,20 @@
       paused: false,
       last: Date.now(),
       startedAt: Date.now(),
-      elapsed: 0,
+      exElapsed: 0,        // time spent actually exercising — the 11 minutes
+      totalElapsed: 0,     // wall clock, transitions included
+      trans: 0,
+      voicePending: false,
+      skipped: false,
       tick: null
     };
     run.remaining = run.steps[0].seconds;
-    run.ready = READY_SECONDS;      // a beat before the clock starts
     keepAwake(true);
     Voice.unlock();
     buildPips();
     paintStep();
-    paintReady();
     go('work');
+    beginTransition();
     run.tick = setInterval(tick, 200);
   }
 
@@ -856,9 +869,9 @@
     $('fig').hidden = false;
     img.onerror = function () { $('fig').hidden = true; };
 
-    // The metronome only applies to the stationary run.
+    // The metronome is started by endTransition, never here — otherwise it
+    // ticks underneath the spoken announcement.
     Metro.stop();
-    if (metroApplies()) Metro.start();
 
     paintClock();
     paintPips();
@@ -867,9 +880,10 @@
   function paintClock() {
     var c = $('clock');
     c.textContent = mmss(run.remaining);
-    c.classList.toggle('is-low', run.remaining <= 5 && !run.paused);
+    c.classList.toggle('is-low', run.remaining <= 5 && !run.paused && !inTransition());
     c.classList.toggle('is-paused', run.paused);
-    $('work-elapsed').textContent = mmss(run.elapsed);
+    // The header clock shows exercise time — the 11 minutes the plan counts.
+    $('work-elapsed').textContent = mmss(run.exElapsed);
   }
 
   function tick() {
@@ -878,18 +892,24 @@
     run.last = now;
     if (run.paused) return;
 
-    // Hold the clock until the get-ready beat is over.
-    if (run.ready > 0) {
-      var was = Math.ceil(run.ready);
-      run.ready -= dt;
-      if (run.ready <= 0) { endReady(); return; }
-      if (Math.ceil(run.ready) !== was) click(false);
-      paintReady();
+    run.totalElapsed += dt;      // wall clock, transitions included
+
+    // Transition: the exercise clock is held, and we wait for the countdown
+    // AND for the announcement to finish before starting.
+    if (inTransition()) {
+      if (run.trans > 0) {
+        var was = Math.ceil(run.trans);
+        run.trans -= dt;
+        if (Math.ceil(run.trans) !== was && run.trans > 0) click(false);
+      }
+      if (run.trans <= 0 && !run.voicePending) { endTransition(); return; }
+      paintTransition();
+      paintClock();
       return;
     }
 
     run.remaining -= dt;
-    run.elapsed += dt;
+    run.exElapsed += dt;         // only counts while an exercise is running
 
     if (run.remaining <= 0) {
       if (run.i >= run.steps.length - 1) { finishWorkout(); return; }
@@ -901,44 +921,83 @@
     paintPips();
   }
 
-  var READY_SECONDS = 5;
+  /* ---------- transitions ----------
+     The booklet gives per-exercise allotments totalling 11 minutes and says
+     nothing at all about rest between them — it also says explicitly that the
+     allotted times "may be varied within the total 11 minute period". A pause
+     to get off the floor and set up is therefore an app decision, not a
+     violation, so long as it is accounted for honestly.
 
-  function paintReady() {
+     Transition time sits OUTSIDE the 11 minutes. Two clocks are kept: exercise
+     time (the 11:00 the plan cares about) and total elapsed. The voice
+     announcement plays here, and the exercise never starts while it is still
+     talking — otherwise the metronome ticks over the announcement.            */
+
+  function transitionSeconds() {
+    var v = prefs.transitionSeconds;
+    return (v === 0 || v > 0) ? v : 10;
+  }
+
+  function beginTransition() {
+    run.trans = transitionSeconds();
+    run.voicePending = true;
+    var s = run.steps[run.i];
+    Voice.say('Exercise ' + (run.i + 1) + '. ' + s.ex.name + '. ' + s.target + '.',
+      function () { run.voicePending = false; });
+
+    // Nothing to wait for: start straight away.
+    if (run.trans <= 0 && !run.voicePending) { endTransition(); return; }
+    paintTransition();
+  }
+
+  function paintTransition() {
     var box = $('ready');
-    if (!run || run.ready <= 0) { box.hidden = true; return; }
-    var s = run.steps[0];
+    if (!run || !inTransition()) { box.hidden = true; return; }
+    var s = run.steps[run.i];
     box.hidden = false;
+    $('ready-kicker').textContent = run.i === 0 ? 'Get ready' : 'Next up';
     $('ready-name').textContent = s.ex.name;
     $('ready-target').textContent = s.target;
-    $('ready-count').textContent = String(Math.ceil(run.ready));
+    var left = Math.max(0, Math.ceil(run.trans));
+    $('ready-count').textContent = left > 0 ? String(left) : '·';
     var img = $('ready-fig');
-    var src = 'figures/c' + prefs.chartId + 'e1.png';
+    var src = 'figures/c' + prefs.chartId + 'e' + (run.i + 1) + '.png';
     if (img.getAttribute('src') !== src) {
+      img.hidden = false;
       img.src = src;
       img.onerror = function () { img.hidden = true; };
     }
   }
 
-  function endReady() {
+  function inTransition() {
+    return !!run && (run.trans > 0 || run.voicePending);
+  }
+
+  function endTransition() {
     if (!run) return;
-    run.ready = 0;
+    run.trans = 0;
+    run.voicePending = false;
     run.last = Date.now();
     $('ready').hidden = true;
     beep(1);
-    announceStep();
+    if (metroApplies()) Metro.start();
+    paintClock();
   }
 
   function advance(dir, auto) {
-    if (run.ready > 0) { run.ready = 0; $('ready').hidden = true; }
     var next = run.i + dir;
     if (next < 0) next = 0;
     if (next > run.steps.length - 1) { finishWorkout(); return; }
+
+    // Skipping an exercise with time left means we can't vouch for the reps.
+    if (!auto && dir > 0 && run.remaining > 2 && !inTransition()) run.skipped = true;
+
+    Metro.stop();
     run.i = next;
     run.remaining = run.steps[next].seconds;
     run.last = Date.now();
-    if (!auto) beep(1);
     paintStep();
-    announceStep();
+    beginTransition();
   }
 
   function stopTimer() {
@@ -953,25 +1012,50 @@
     stopTimer();
     Voice.say('Workout complete');
     var planned = D.timing.totalSeconds;
+    var exSec = Math.round(run.exElapsed);
+    var totalSec = Math.round(run.totalElapsed);
+    var skipped = run.skipped;
+
     pending = {
       id: String(Date.now()),
       date: new Date().toISOString(),
       chartId: prefs.chartId,
       level: prefs.level,
       ex5Mode: prefs.ex5Mode,
-      durationSeconds: Math.round(run.elapsed),
+      durationSeconds: exSec,           // exercise time — what the rule counts
+      totalSeconds: totalSec,           // wall clock including transitions
       completedInTime: null,
       notes: ''
     };
+
     var sum = $('done-summary');
     sum.innerHTML = '';
     sum.appendChild(el('div', 'big', 'Chart ' + prefs.chartId + ' · ' + prefs.level));
-    sum.appendChild(el('div', 'sub',
-      mmss(pending.durationSeconds) + ' elapsed' +
-      (prefs.ex5Mode === 'stationary' ? '' : ' · exercise 5 substituted') +
-      (prefs.ex5Mode === 'stationary' && pending.durationSeconds <= planned + 2 ? ' · inside 11 minutes' : '')));
+
+    var rows = el('div', 'done-rows');
+    function row(k, v, strong) {
+      var d = el('div', 'done-row');
+      d.appendChild(el('span', null, k));
+      d.appendChild(el('b', strong ? 'is-strong' : null, v));
+      rows.appendChild(d);
+    }
+    row('Exercise time', mmss(exSec), true);
+    if (totalSec > exSec + 1) row('Including breaks', mmss(totalSec));
+    if (prefs.ex5Mode !== 'stationary') row('Exercise 5', 'substituted');
+    sum.appendChild(rows);
+
+    var inTime = exSec <= planned + 2;
+    sum.appendChild(el('div', 'sub', inTime
+      ? 'That is inside the 11 minute allotment.'
+      : 'That is over the 11 minute allotment.'));
+
     $('notes').value = '';
-    setDonePick(null);
+    // Pre-fill from the measurement, but only when we can vouch for it: no
+    // exercise was cut short, so the reps had their full allotted time.
+    setDonePick(skipped ? null : (inTime ? 'yes' : 'no'));
+    if (skipped) {
+      sum.appendChild(el('div', 'sub', 'You skipped ahead, so answer below yourself.'));
+    }
     run = null;
     go('done');
   }
@@ -1129,6 +1213,47 @@
     }
   }
 
+  /* ============================ splash ============================
+     An installed PWA resuming from the background never re-runs boot, so you
+     come back to whatever screen you left. On a cold start the splash is a
+     brief branded beat; on resume after a long gap it waits for a tap, so you
+     get your bearings exactly when you are disoriented and never otherwise.
+     A workout in progress is never interrupted.                              */
+
+  var SPLASH_AUTO_MS = 1500;
+  var RESUME_AFTER_MS = 20 * 60 * 1000;
+  var splashTimer = null;
+  var hiddenAt = null;
+
+  function showSplash(auto) {
+    if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
+    $('splash-level').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+    $('splash-hint').textContent = auto ? '' : 'tap to continue';
+    go('splash');
+    if (auto) splashTimer = setTimeout(dismissSplash, SPLASH_AUTO_MS);
+  }
+
+  function dismissSplash() {
+    if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
+    if ($('screen-splash').hidden) return;
+    go(prefs.seenWelcome ? 'home' : 'welcome');
+  }
+
+  function wireSplash() {
+    $('screen-splash').addEventListener('click', dismissSplash);
+    $('screen-splash').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dismissSplash(); }
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      var away = hiddenAt ? Date.now() - hiddenAt : 0;
+      hiddenAt = null;
+      if (run) return;                       // never interrupt a workout
+      if (away >= RESUME_AFTER_MS) showSplash(false);
+    });
+  }
+
   /* ============================ welcome ============================
      First run only. Three cards, skippable at any point. Its one job is:
      here is the shape of it, here is your target, press this.               */
@@ -1203,6 +1328,12 @@
     $('set-metro').setAttribute('aria-checked', prefs.metronome ? 'true' : 'false');
     $('voice-support').hidden = Voice.supported;
     $('metro-opts').hidden = !prefs.metronome;
+
+    var ts = $('set-trans').querySelectorAll('.seg__btn');
+    for (var n = 0; n < ts.length; n++) {
+      ts[n].setAttribute('aria-pressed',
+        parseInt(ts[n].dataset.trans, 10) === transitionSeconds() ? 'true' : 'false');
+    }
 
     var rs = $('set-resume').querySelectorAll('.seg__btn');
     for (var i = 0; i < rs.length; i++) {
@@ -1285,6 +1416,14 @@
       welCard = 1;
       $('wel-age').value = prefs.age || '';
       go('welcome');
+    });
+
+    $('set-trans').addEventListener('click', function (e) {
+      var b = e.target.closest('.seg__btn');
+      if (!b) return;
+      prefs.transitionSeconds = parseInt(b.dataset.trans, 10);
+      save(K_PREFS, prefs);
+      renderSettings();
     });
 
     $('set-window').addEventListener('click', function (e) {
@@ -1452,9 +1591,9 @@
     $('btn-start-preview').addEventListener('click', startWorkout);
 
     // Tap the get-ready overlay to begin immediately.
-    $('ready').addEventListener('click', endReady);
+    $('ready').addEventListener('click', endTransition);
     $('ready').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endReady(); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endTransition(); }
     });
 
     $('btn-pause').addEventListener('click', function () {
@@ -1541,13 +1680,15 @@
       if (prefs.jumpWindow === undefined) prefs.jumpWindow = null;
       if (!chartById(prefs.chartId).levels[prefs.level]) { prefs.chartId = 1; prefs.level = 'D-'; }
       if (prefs.seenWelcome === undefined) prefs.seenWelcome = false;
+      if (prefs.transitionSeconds === undefined) prefs.transitionSeconds = 10;
       save(K_PREFS, prefs);   // persist the normalised defaults
       Voice.init();
       sessions = load(K_SESSIONS, []);
       $('boot').hidden = true;
       $('app').hidden = false;
       wire();
-      go(prefs.seenWelcome ? 'home' : 'welcome');
+      wireSplash();
+      showSplash(true);      // brief branded beat, auto-dismisses
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(function () {});

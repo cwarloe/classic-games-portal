@@ -52,9 +52,30 @@ Every rep count, step count and time was transcribed from a scan of the original
 
 **Preview** — one tap from Today, beside Start: all five exercises with figures, targets and instructions. Today already lists the exercises and targets; what it cannot show is what the movements look like, and the figures otherwise only appear mid-exercise when it is too late to study them. Start stays primary and full-size, so the happy path for a returning user is still a single tap.
 
-**Get ready** — a five second beat before exercise 1 showing its name, target and figure, with the clock held until it ends. Tap to start immediately. Without it, pressing Start dropped you into a live countdown while you were still reading.
+**Splash** — a brief branded beat on cold start that auto-dismisses after 1.5s. On *resume* it waits for a tap, and only when the app has been in the background 20+ minutes and no workout is running. An installed PWA resuming from background never re-runs boot, so without this you come back to whatever screen you left. A workout in progress is never interrupted.
+
+**Breaks between exercises** — a transition before *every* exercise (not just the first) showing what's next: name, target, figure and a countdown. Tap to start immediately. Default 10s, configurable 0/5/10/15/20 in Settings.
 
 **Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
+
+## Two clocks
+
+The booklet gives per-exercise allotments totalling 11 minutes and says **nothing at all about rest between exercises** — while explicitly allowing that the allotted times "may be varied within the total 11 minute period". A pause to get off the floor is therefore an app decision, not a violation, so long as it is accounted for honestly.
+
+Break time sits **outside** the 11 minutes. Two clocks are tracked:
+
+- `exElapsed` — time spent actually exercising. This is the 11:00 the plan's progression rule counts, and it is what the workout header shows.
+- `totalElapsed` — wall clock including breaks.
+
+Both are stored on every session (`durationSeconds` and `totalSeconds`). The finish screen shows exercise time prominently and total time beneath it.
+
+Because exercise time is now measured rather than guessed, the finish screen **pre-fills** the "completed within 11 minutes" answer — but only when no exercise was cut short. Skipping ahead sets `run.skipped`, which leaves the answer blank and says so, because the app cannot vouch for reps that never got their allotted time.
+
+## Voice and the metronome
+
+The spoken announcement plays during the break, and the exercise never starts while it is still talking. Previously `paintStep()` started the metronome in the same frame as the announcement, so the ticking ran underneath the voice.
+
+Two guards: the announcement is structurally moved into the break, and `Voice.say()` takes an `onEnd` callback backed by a word-count timeout (speechSynthesis `end` is unreliable on some platforms). With breaks set to 0 and voice on, the exercise still waits for the announcement to finish — 0 means "no dead air", not "talk over me".
 
 ## Progression rule
 
