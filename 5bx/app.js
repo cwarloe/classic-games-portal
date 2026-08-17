@@ -207,7 +207,7 @@
 
   /* ============================ navigation ============================ */
 
-  var SCREENS = ['home', 'work', 'done', 'history', 'reference', 'settings'];
+  var SCREENS = ['welcome', 'home', 'picker', 'work', 'done', 'history', 'reference', 'settings'];
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -219,6 +219,8 @@
     if (name === 'history') renderHistory();
     if (name === 'reference') renderReference();
     if (name === 'settings') renderSettings();
+    if (name === 'picker') renderPicker();
+    if (name === 'welcome') renderWelcome();
     if (name === 'home') renderHome();
   }
 
@@ -239,39 +241,8 @@
     return out;
   }
 
-  function renderHome() {
+  function renderTargets() {
     var c = chartById(prefs.chartId);
-
-    // Chart picker
-    var cp = $('chart-picker');
-    cp.innerHTML = '';
-    D.charts.forEach(function (ch) {
-      var b = el('button', 'seg__btn', String(ch.id));
-      b.setAttribute('aria-pressed', ch.id === prefs.chartId ? 'true' : 'false');
-      b.addEventListener('click', function () {
-        prefs.chartId = ch.id;
-        save(K_PREFS, prefs);
-        renderHome();
-      });
-      cp.appendChild(b);
-    });
-    $('chart-note').textContent = c.note || '';
-
-    // Level picker
-    var lp = $('level-picker');
-    lp.innerHTML = '';
-    D.levelOrder.slice().reverse().forEach(function (lvl) {
-      var b = el('button', 'seg__btn', lvl);
-      b.setAttribute('aria-pressed', lvl === prefs.level ? 'true' : 'false');
-      b.addEventListener('click', function () {
-        prefs.level = lvl;
-        save(K_PREFS, prefs);
-        renderHome();
-      });
-      lp.appendChild(b);
-    });
-
-    // Targets
     var lv = c.levels[prefs.level];
     var list = $('targets');
     list.innerHTML = '';
@@ -281,13 +252,19 @@
 
       var name = el('span', 't-name');
       name.appendChild(document.createTextNode(ex.name));
-      name.appendChild(el('span', 't-sub', mmss(D.timing.secondsPerExercise[i]) + ' allotted'));
+      var sub = mmss(D.timing.secondsPerExercise[i]) + ' allotted';
+      if (i === 4 && prefs.ex5Mode !== 'stationary') sub = 'substituted';
+      name.appendChild(el('span', 't-sub', sub));
       li.appendChild(name);
 
       var reps = el('span', 't-reps');
       if (i < 4) {
         reps.appendChild(document.createTextNode(String(lv.reps[i])));
         reps.appendChild(el('span', 't-unit', ' reps'));
+      } else if (prefs.ex5Mode === 'run') {
+        reps.appendChild(el('span', 't-unit', c.alternatives.runLabel));
+      } else if (prefs.ex5Mode === 'walk') {
+        reps.appendChild(el('span', 't-unit', c.alternatives.walkLabel));
       } else {
         reps.appendChild(document.createTextNode(String(lv.steps)));
         reps.appendChild(el('span', 't-unit', ' steps'));
@@ -295,8 +272,104 @@
       li.appendChild(reps);
       list.appendChild(li);
     });
+  }
 
-    // Exercise 5 mode
+  /* ---------- the journey bar ----------
+     72 levels end to end. Seeing where you are, and where your age goal sits,
+     is the clearest answer to "why am I doing two toe-touches?".            */
+
+  function renderJourney(host) {
+    if (!host) return;
+    host.innerHTML = '';
+    var total = maxGlobal();
+    var here = globalIndex(prefs.chartId, prefs.level);
+    var goal = ageGoalGlobal();
+
+    var bar = el('div', 'journey__bar');
+    var fill = el('i');
+    fill.style.width = (here / total * 100) + '%';
+    bar.appendChild(fill);
+
+    if (goal != null) {
+      var mark = el('span', 'journey__goal');
+      mark.style.left = (goal / total * 100) + '%';
+      bar.appendChild(mark);
+    }
+    host.appendChild(bar);
+
+    var cap = el('p', 'journey__cap');
+    cap.appendChild(el('span', null, 'Level ' + (here + 1) + ' of ' + (total + 1)));
+    if (goal != null) {
+      var g = fromGlobal(goal);
+      cap.appendChild(el('span', 'journey__goal-txt',
+        here >= goal ? 'Goal reached · Chart ' + g.chartId + ' ' + g.level
+                     : 'Goal · Chart ' + g.chartId + ' ' + g.level));
+    }
+    host.appendChild(cap);
+  }
+
+  // The level the booklet sets as this age's goal, as a global index.
+  function ageGoalGlobal() {
+    if (prefs.age == null) return null;
+    var best = null;
+    D.charts.forEach(function (c) {
+      (c.ageGroups || []).forEach(function (a) {
+        if (matchesAge(a.label, prefs.age)) best = globalIndex(c.id, a.level);
+      });
+    });
+    return best;
+  }
+
+  /* ---------- today ---------- */
+
+  function renderHome() {
+    $('today-level').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+
+    var st = progressState();
+    var bits = [];
+    if (st.daysAtLevel === 0) bits.push('Not started at this level');
+    else bits.push(st.daysAtLevel + (st.daysAtLevel === 1 ? ' day' : ' days') + ' at this level');
+    if (prefs.ex5Mode !== 'stationary') bits.push('exercise 5 substituted');
+    $('today-meta').textContent = bits.join(' · ');
+
+    renderJourney($('today-journey'));
+    renderTargets();
+    renderLayoff();
+    renderSuggestion();
+  }
+
+  /* ---------- level picker ---------- */
+
+  function renderPicker() {
+    var c = chartById(prefs.chartId);
+
+    var cp = $('chart-picker');
+    cp.innerHTML = '';
+    D.charts.forEach(function (ch) {
+      var b = el('button', 'seg__btn', String(ch.id));
+      b.setAttribute('aria-pressed', ch.id === prefs.chartId ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        prefs.chartId = ch.id;
+        save(K_PREFS, prefs);
+        renderPicker();
+      });
+      cp.appendChild(b);
+    });
+    $('chart-note').textContent = c.note || '';
+
+    var lp = $('level-picker');
+    lp.innerHTML = '';
+    D.levelOrder.slice().reverse().forEach(function (lvl) {
+      var b = el('button', 'seg__btn', lvl);
+      b.setAttribute('aria-pressed', lvl === prefs.level ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        prefs.level = lvl;
+        save(K_PREFS, prefs);
+        renderPicker();
+      });
+      lp.appendChild(b);
+    });
+
     var modes = ex5Modes();
     if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) prefs.ex5Mode = 'stationary';
     var mp = $('ex5-picker');
@@ -307,7 +380,7 @@
       b.addEventListener('click', function () {
         prefs.ex5Mode = m.id;
         save(K_PREFS, prefs);
-        renderHome();
+        renderPicker();
       });
       mp.appendChild(b);
     });
@@ -315,7 +388,81 @@
       ? 'Every ' + c.exercises[4].jumpEvery + ' steps do ' + c.exercises[4].jumpCount + ' ' + c.exercises[4].jumpName + '.'
       : D.substitutionNote;
 
-    renderSuggestion();
+    $('picker-caution').textContent = D.rules.caution;
+  }
+
+  /* ---------- layoff ----------
+     "Do drop back several levels - until you find one you can do without undue
+     strain. After a period of inactivity of longer than two months, or one
+     month if caused by illness, it is recommended that you start again at
+     Chart 1." The app recommends; the user decides.                          */
+
+  var LAYOFF_RESTART_DAYS = 60;
+  var LAYOFF_DROP_DAYS = 14;
+  var LAYOFF_DROP_LEVELS = 3;
+
+  function lastSessionDate() {
+    var t = null;
+    sessions.forEach(function (s) {
+      var d = new Date(s.date).getTime();
+      if (!t || d > t) t = d;
+    });
+    return t;
+  }
+
+  function layoffState() {
+    var last = lastSessionDate();
+    if (!last) return null;
+    var days = Math.floor((Date.now() - last) / 86400000);
+    if (days < LAYOFF_DROP_DAYS) return null;
+
+    var here = globalIndex(prefs.chartId, prefs.level);
+    if (here === 0) return null;   // already at the very bottom
+
+    // Don't nag once this particular layoff has been answered.
+    if (prefs.layoffAck && prefs.layoffAck >= last) return null;
+
+    if (days >= LAYOFF_RESTART_DAYS) {
+      return { days: days, to: 0, kind: 'restart' };
+    }
+    return { days: days, to: Math.max(0, here - LAYOFF_DROP_LEVELS), kind: 'drop' };
+  }
+
+  function renderLayoff() {
+    var box = $('layoff');
+    box.innerHTML = '';
+    var st = layoffState();
+    if (!st) { box.hidden = true; return; }
+    box.hidden = false;
+
+    var target = fromGlobal(st.to);
+    var weeks = Math.floor(st.days / 7);
+    var since = weeks >= 2 ? weeks + ' weeks' : st.days + ' days';
+
+    box.appendChild(el('h3', null, 'It has been ' + since));
+    box.appendChild(el('p', null, st.kind === 'restart'
+      ? 'After more than two months off, the plan says start again at Chart 1.'
+      : 'After a break the plan says drop back several levels, until you find one you can do without undue strain.'));
+
+    var row = el('div', 'notice__row');
+    var accept = el('button', 'btn btn--primary',
+      'Go to Chart ' + target.chartId + ' ' + target.level);
+    accept.addEventListener('click', function () {
+      prefs.chartId = target.chartId;
+      prefs.level = target.level;
+      prefs.layoffAck = Date.now();
+      save(K_PREFS, prefs);
+      renderHome();
+    });
+    var keep = el('button', 'btn btn--ghost', 'Keep my level');
+    keep.addEventListener('click', function () {
+      prefs.layoffAck = Date.now();
+      save(K_PREFS, prefs);
+      renderHome();
+    });
+    row.appendChild(accept);
+    row.appendChild(keep);
+    box.appendChild(row);
   }
 
   /* ---------- progression logic ----------
@@ -891,6 +1038,74 @@
     }
   }
 
+  /* ============================ welcome ============================
+     First run only. Three cards, skippable at any point. Its one job is:
+     here is the shape of it, here is your target, press this.               */
+
+  var welCard = 1;
+  var WEL_CARDS = 3;
+
+  function renderWelcome() {
+    for (var n = 1; n <= WEL_CARDS; n++) {
+      var node = document.querySelector('.wel[data-card="' + n + '"]');
+      if (node) node.hidden = (n !== welCard);
+    }
+
+    var dots = $('wel-dots');
+    dots.innerHTML = '';
+    for (var k = 1; k <= WEL_CARDS; k++) {
+      dots.appendChild(el('span', 'dot' + (k === welCard ? ' is-on' : '')));
+    }
+
+    if (welCard === 1 && !$('wel-list').childNodes.length) {
+      // Naming the five is more use than five illustrations at thumbnail size.
+      D.exerciseShortNames.forEach(function (n) {
+        $('wel-list').appendChild(el('li', null, n));
+      });
+    }
+    if (welCard === 2) renderJourney($('wel-journey'));
+    if (welCard === 3) renderWelcomeGoal();
+
+    $('wel-skip').textContent = welCard === WEL_CARDS ? 'Not now' : 'Skip';
+    $('wel-next').textContent = welCard === WEL_CARDS ? 'Get started' : 'Next';
+  }
+
+  function renderWelcomeGoal() {
+    var box = $('wel-goal');
+    var goal = ageGoalGlobal();
+    if (goal == null) { box.hidden = true; return; }
+    var g = fromGlobal(goal);
+    box.innerHTML = '';
+    box.hidden = false;
+    box.appendChild(el('p', 'wel__goal-label', 'Your goal'));
+    box.appendChild(el('p', 'wel__goal-value', 'Chart ' + g.chartId + ' · ' + g.level));
+    var away = goal + 1;
+    box.appendChild(el('p', 'wel__goal-sub',
+      away + ' levels from the bottom of Chart 1. Most people take months.'));
+  }
+
+  function finishWelcome() {
+    prefs.seenWelcome = true;
+    save(K_PREFS, prefs);
+    go('home');
+  }
+
+  function wireWelcome() {
+    $('wel-next').addEventListener('click', function () {
+      if (welCard >= WEL_CARDS) { finishWelcome(); return; }
+      welCard++;
+      renderWelcome();
+    });
+    $('wel-skip').addEventListener('click', finishWelcome);
+
+    $('wel-age').addEventListener('input', function () {
+      var v = parseInt($('wel-age').value, 10);
+      prefs.age = isNaN(v) ? null : v;
+      save(K_PREFS, prefs);
+      renderWelcomeGoal();
+    });
+  }
+
   /* ============================ settings ============================ */
 
   function renderSettings() {
@@ -974,6 +1189,12 @@
       prefs.jumpResume = b.dataset.resume;
       save(K_PREFS, prefs);
       renderSettings();
+    });
+
+    $('btn-replay-intro').addEventListener('click', function () {
+      welCard = 1;
+      $('wel-age').value = prefs.age || '';
+      go('welcome');
     });
 
     $('set-window').addEventListener('click', function (e) {
@@ -1157,6 +1378,7 @@
     });
 
     wireSettings();
+    wireWelcome();
 
     $('btn-quit').addEventListener('click', function () {
       if (!run) { go('home'); return; }
@@ -1221,13 +1443,14 @@
       if (!prefs.jumpResume) prefs.jumpResume = 'auto';
       if (prefs.jumpWindow === undefined) prefs.jumpWindow = null;
       if (!chartById(prefs.chartId).levels[prefs.level]) { prefs.chartId = 1; prefs.level = 'D-'; }
+      if (prefs.seenWelcome === undefined) prefs.seenWelcome = false;
       save(K_PREFS, prefs);   // persist the normalised defaults
       Voice.init();
       sessions = load(K_SESSIONS, []);
       $('boot').hidden = true;
       $('app').hidden = false;
       wire();
-      go('home');
+      go(prefs.seenWelcome ? 'home' : 'welcome');
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(function () {});
