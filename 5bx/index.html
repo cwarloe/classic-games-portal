@@ -18,8 +18,48 @@
 
 <div id="app" hidden>
 
-  <!-- ============ HOME / LEVEL SELECT ============ -->
-  <section class="screen" id="screen-home">
+  <!-- ============ WELCOME (first run only) ============ -->
+  <section class="screen screen--welcome" id="screen-welcome" hidden>
+    <div class="wel-scroll">
+      <!-- card 1 -->
+      <div class="wel" data-card="1">
+        <p class="wel__eyebrow">Royal Canadian Air Force, 1961</p>
+        <h1 class="wel__title">5BX</h1>
+        <p class="wel__lead">Five exercises.<br />Eleven minutes.<br />Every day.</p>
+        <img class="wel__hero" id="wel-hero" src="figures/c1e1.png" alt="" decoding="async" />
+        <ol class="wel__list" id="wel-list"></ol>
+      </div>
+
+      <!-- card 2 -->
+      <div class="wel" data-card="2" hidden>
+        <h2 class="wel__h">Six charts,<br />twelve levels each</h2>
+        <p class="wel__body">Do all five exercises inside 11 minutes. When you can manage that, you move up one level.</p>
+        <div class="journey" id="wel-journey"></div>
+        <p class="wel__body wel__body--dim">Seventy-two levels, from the very bottom to champion athlete. It takes most people months, and that&rsquo;s the point.</p>
+      </div>
+
+      <!-- card 3 -->
+      <div class="wel" data-card="3" hidden>
+        <h2 class="wel__h">How far should you go?</h2>
+        <p class="wel__body">Your age sets your goal &mdash; the level worth aiming for.</p>
+        <input class="wel__age" id="wel-age" type="number" min="5" max="99" inputmode="numeric" placeholder="Your age" aria-label="Your age" />
+        <div class="wel__goal" id="wel-goal" hidden></div>
+        <p class="wel__body wel__body--dim" id="wel-start-note">
+          Everyone begins at the bottom of Chart 1, whatever their age. Dr.&nbsp;Orban was firm about it.
+        </p>
+      </div>
+    </div>
+
+    <div class="wel-dots" id="wel-dots" aria-hidden="true"></div>
+
+    <div class="dock dock--split">
+      <button class="btn btn--ghost" id="wel-skip">Skip</button>
+      <button class="btn btn--primary" id="wel-next">Next</button>
+    </div>
+  </section>
+
+  <!-- ============ TODAY (landing) ============ -->
+  <section class="screen" id="screen-home" hidden>
     <header class="topbar">
       <h1 class="brand">5BX</h1>
       <button class="icon-btn" data-go="settings" aria-label="Settings">&#9881;</button>
@@ -27,8 +67,45 @@
     </header>
 
     <div class="scroll">
+      <div id="layoff" class="notice" hidden></div>
       <div id="suggestion" class="suggestion" hidden></div>
 
+      <div class="level-head">
+        <div>
+          <p class="level-head__label">Your level</p>
+          <h2 class="level-head__value" id="today-level">Chart 1 · D-</h2>
+          <p class="level-head__meta" id="today-meta"></p>
+        </div>
+        <button class="btn btn--ghost btn--sm" data-go="picker">Change</button>
+      </div>
+
+      <div class="journey" id="today-journey"></div>
+
+      <div class="card">
+        <h2 class="card__title">Today&rsquo;s targets</h2>
+        <ol class="targets" id="targets"></ol>
+        <p class="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
+      </div>
+
+      <div class="row-btns">
+        <button class="btn btn--ghost" data-go="history">History</button>
+        <button class="btn btn--ghost" data-go="reference">Reference</button>
+      </div>
+    </div>
+
+    <div class="dock">
+      <button class="btn btn--primary btn--xl" id="btn-start">Start workout</button>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL PICKER ============ -->
+  <section class="screen" id="screen-picker" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Back">&#8592;</button>
+      <h1 class="brand">Change level</h1>
+    </header>
+
+    <div class="scroll">
       <div class="field">
         <label class="field__label">Chart</label>
         <div class="seg" id="chart-picker" role="group" aria-label="Chart"></div>
@@ -40,26 +117,17 @@
         <div class="grid-levels" id="level-picker" role="group" aria-label="Level"></div>
       </div>
 
-      <div class="card">
-        <h2 class="card__title">Today&rsquo;s targets</h2>
-        <ol class="targets" id="targets"></ol>
-        <p class="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
-      </div>
-
       <div class="field">
         <label class="field__label">Exercise 5</label>
         <div class="seg seg--stack" id="ex5-picker" role="group" aria-label="Exercise 5 mode"></div>
         <p class="field__hint" id="ex5-note"></p>
       </div>
 
-      <div class="row-btns">
-        <button class="btn btn--ghost" data-go="history">History</button>
-        <button class="btn btn--ghost" data-go="reference">Reference</button>
-      </div>
+      <p class="field__hint" id="picker-caution"></p>
     </div>
 
     <div class="dock">
-      <button class="btn btn--primary btn--xl" id="btn-start">Start workout</button>
+      <button class="btn btn--primary btn--xl" data-go="home">Done</button>
     </div>
   </section>
 
@@ -199,6 +267,10 @@
           <h2 class="card__title">Pace at your current level</h2>
           <div id="pace-preview"></div>
         </div>
+      </div>
+
+      <div class="row-btns">
+        <button class="btn btn--ghost" id="btn-replay-intro">Show the intro again</button>
       </div>
     </div>
   </section>

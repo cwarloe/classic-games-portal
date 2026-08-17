@@ -9,7 +9,7 @@ Open `5bx/index.html` over HTTP (the app `fetch`es its data file, so `file://` w
 | File | What it is |
 |---|---|
 | `data/5bx-charts.json` | **All plan data.** Rep counts, step counts, run/walk times, exercise descriptions, age goals, progression rules. Hand-editable. |
-| `index.html` | Screen markup (home, workout, log, history, reference). |
+| `index.html` | Screen markup (welcome, today, picker, workout, log, history, reference, settings). |
 | `app.js` | All behaviour. No dependencies. |
 | `styles.css` | Dark theme, large tap targets. |
 | `figures/` | The booklet's exercise illustrations, `c{chart}e{exercise}.png`. Regenerate with `tools/extract-5bx-figures.py`. |
@@ -46,11 +46,41 @@ Every rep count, step count and time was transcribed from a scan of the original
 
    The same source also lists 30–34 yrs as Chart 4 `C+` on one page and `C-` on another; the booklet says **C-**. And it repeats "lift feet approximately 4 inches off floor" for exercise 5 on charts 4–6, where the booklet says **"lift knees waist high"**.
 
+## Screens
+
+**Welcome** — first run only, three cards, skippable at any point: what 5BX is, how the levels work, and an optional age that sets your goal. Replayable from Settings. Its only job is to get someone oriented enough to press start.
+
+**Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
+
 ## Progression rule
 
 The booklet's rule is: move up one level only once you can complete *all* the required movements at your present level **within 11 minutes**. It also caps how fast you may climb, by age (1 day per level at 20 or under, up to 10 days per level at 60+).
 
 The app applies both. After you log a session marked "completed within 11 minutes", the home screen suggests the next level — but only once you have logged sessions on at least the required number of distinct days at that level. Set your age on the Reference screen to enable the day requirement; leave it unset and only the 11-minute rule applies. `A+` on one chart advances to `D-` on the next.
+
+## Where you start, and where you're going
+
+Age sets the **goal**, never the starting point. The booklet is blunt about this:
+
+> "Even if you feel able to start at a high level and progress at a faster rate than indicated — DON'T DO IT. Start at the bottom of Chart 1 and work up from level to level as recommended."
+
+So the welcome collects an age, shows the goal it implies, and still starts everyone at Chart 1 D−. Age 38 → Chart 3 level B, which the app reports as 32 levels from the bottom — matching the booklet's own worked example.
+
+The journey bar on Today shows position across all 72 levels with a marker at the age goal.
+
+## Layoff detection
+
+The booklet: *"Do drop back several levels — until you find one you can do without undue strain. After a period of inactivity of longer than two months, or one month if caused by illness, it is recommended that you start again at Chart 1."*
+
+Today shows a notice when the last logged session is old, and **recommends without imposing** — accept the drop or keep your level, either way it stops asking for that layoff (`layoffAck` in prefs).
+
+| Days since last session | Recommendation |
+|---|---|
+| under 14 | nothing |
+| 14–59 | drop back 3 levels |
+| 60+ | restart at Chart 1 D− |
+
+The thresholds and the 3-level drop are an interpretation of "several levels"; the two-month rule is verbatim. Constants are at the top of the layoff section in `app.js`.
 
 ## Illustrations
 
