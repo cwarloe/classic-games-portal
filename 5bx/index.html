@@ -176,7 +176,7 @@
     <!-- Get ready: a beat to see what is coming before the clock runs. -->
     <div class="ready" id="ready" hidden role="button" tabindex="0" aria-live="polite">
       <div class="ready__inner">
-        <p class="ready__kicker">Get ready</p>
+        <p class="ready__kicker" id="ready-kicker">Get ready</p>
         <h2 class="ready__name" id="ready-name"></h2>
         <p class="ready__target" id="ready-target"></p>
         <img class="ready__fig" id="ready-fig" alt="" decoding="async" />
@@ -263,6 +263,18 @@
       </div>
       <p class="set-note" id="voice-support" hidden>This browser has no speech support, so voice cues will stay silent.</p>
 
+      <div class="field">
+        <label class="field__label">Break between exercises</label>
+        <div class="seg" id="set-trans" role="group">
+          <button class="seg__btn" data-trans="0">None</button>
+          <button class="seg__btn" data-trans="5">5s</button>
+          <button class="seg__btn" data-trans="10">10s</button>
+          <button class="seg__btn" data-trans="15">15s</button>
+          <button class="seg__btn" data-trans="20">20s</button>
+        </div>
+        <p class="field__hint">Time to get up off the floor and set up. It sits outside the 11 minutes &mdash; the app tracks exercise time and total time separately. With voice cues on, the exercise never starts while the announcement is still speaking.</p>
+      </div>
+
       <div class="set-row">
         <div class="set-row__text">
           <h2>Step metronome</h2>
@@ -311,6 +323,18 @@
       <h1 class="brand">Reference</h1>
     </header>
     <div class="scroll" id="reference-body"></div>
+  </section>
+
+  <!-- ============ SPLASH ============ -->
+  <section class="screen screen--splash" id="screen-splash" hidden role="button" tabindex="0">
+    <div class="splash">
+      <p class="splash__eyebrow">Royal Canadian Air Force</p>
+      <h1 class="splash__title">5BX</h1>
+      <p class="splash__sub">Five Basic Exercises</p>
+      <img class="splash__fig" src="figures/c1e1.png" alt="" decoding="async" />
+      <p class="splash__level" id="splash-level"></p>
+      <p class="splash__hint" id="splash-hint">tap to continue</p>
+    </div>
   </section>
 
 </div>
