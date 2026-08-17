@@ -9,7 +9,7 @@ Open `5bx/index.html` over HTTP (the app `fetch`es its data file, so `file://` w
 | File | What it is |
 |---|---|
 | `data/5bx-charts.json` | **All plan data.** Rep counts, step counts, run/walk times, exercise descriptions, age goals, progression rules. Hand-editable. |
-| `index.html` | Screen markup (welcome, today, picker, workout, log, history, reference, settings). |
+| `index.html` | Screen markup (welcome, today, preview, picker, workout, log, history, reference, settings). |
 | `app.js` | All behaviour. No dependencies. |
 | `styles.css` | Dark theme, large tap targets. |
 | `figures/` | The booklet's exercise illustrations, `c{chart}e{exercise}.png`. Regenerate with `tools/extract-5bx-figures.py`. |
@@ -50,6 +50,10 @@ Every rep count, step count and time was transcribed from a scan of the original
 
 **Welcome** — first run only, three cards, skippable at any point: what 5BX is, how the levels work, and an optional age that sets your goal. Replayable from Settings. Its only job is to get someone oriented enough to press start.
 
+**Preview** — one tap from Today, beside Start: all five exercises with figures, targets and instructions. Today already lists the exercises and targets; what it cannot show is what the movements look like, and the figures otherwise only appear mid-exercise when it is too late to study them. Start stays primary and full-size, so the happy path for a returning user is still a single tap.
+
+**Get ready** — a five second beat before exercise 1 showing its name, target and figure, with the clock held until it ends. Tap to start immediately. Without it, pressing Start dropped you into a live countdown while you were still reading.
+
 **Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
 
 ## Progression rule
@@ -65,6 +69,8 @@ Age sets the **goal**, never the starting point. The booklet is blunt about this
 > "Even if you feel able to start at a high level and progress at a faster rate than indicated — DON'T DO IT. Start at the bottom of Chart 1 and work up from level to level as recommended."
 
 So the welcome collects an age, shows the goal it implies, and still starts everyone at Chart 1 D−. Age 38 → Chart 3 level B, which the app reports as 32 levels from the bottom — matching the booklet's own worked example.
+
+The visual hierarchy carries this: **"You start here — Chart 1 · D−"** is the headline on that card (30px, in the accent box) and the age goal is a quiet 14.5px line beneath it. An earlier version had them the other way round, which read as though the app had set you to the goal level — the exact opposite of the rule.
 
 The journey bar on Today shows position across all 72 levels with a marker at the age goal.
 

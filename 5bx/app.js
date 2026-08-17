@@ -207,7 +207,7 @@
 
   /* ============================ navigation ============================ */
 
-  var SCREENS = ['welcome', 'home', 'picker', 'work', 'done', 'history', 'reference', 'settings'];
+  var SCREENS = ['welcome', 'home', 'picker', 'preview', 'work', 'done', 'history', 'reference', 'settings'];
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -220,6 +220,7 @@
     if (name === 'reference') renderReference();
     if (name === 'settings') renderSettings();
     if (name === 'picker') renderPicker();
+    if (name === 'preview') renderPreview();
     if (name === 'welcome') renderWelcome();
     if (name === 'home') renderHome();
   }
@@ -336,6 +337,57 @@
     renderTargets();
     renderLayoff();
     renderSuggestion();
+  }
+
+  /* ---------- preview ----------
+     Today already lists the five exercises and their targets; what it can't
+     show is what the movements look like. This is that, one tap away, so the
+     happy path for a returning user is still a single Start.                */
+
+  function renderPreview() {
+    var host = $('preview-body');
+    host.innerHTML = '';
+    var c = chartById(prefs.chartId);
+    var lv = c.levels[prefs.level];
+
+    var head = el('p', 'prev-head', 'Chart ' + prefs.chartId + ' · ' + prefs.level +
+      ' — five exercises in the same order, 11 minutes.');
+    host.appendChild(head);
+
+    c.exercises.forEach(function (ex, i) {
+      var card = el('div', 'prev');
+
+      var top = el('div', 'prev__top');
+      top.appendChild(el('span', 'prev__n', String(i + 1)));
+      var t = el('div', 'prev__t');
+      t.appendChild(el('h2', null, ex.name));
+      t.appendChild(el('p', null, mmss(D.timing.secondsPerExercise[i]) + ' allotted'));
+      top.appendChild(t);
+
+      var target;
+      if (i < 4) target = lv.reps[i] + ' reps';
+      else if (prefs.ex5Mode === 'run') target = c.alternatives.runLabel;
+      else if (prefs.ex5Mode === 'walk') target = c.alternatives.walkLabel;
+      else target = lv.steps + ' steps';
+      top.appendChild(el('span', 'prev__target', target));
+      card.appendChild(top);
+
+      var img = document.createElement('img');
+      img.className = 'prev__fig';
+      img.src = 'figures/c' + prefs.chartId + 'e' + (i + 1) + '.png';
+      img.alt = 'Illustration: ' + ex.name;
+      img.loading = 'lazy';
+      img.onerror = function () { img.remove(); };
+      card.appendChild(img);
+
+      card.appendChild(el('p', 'prev__lead', ex.start));
+      card.appendChild(el('p', 'prev__move', ex.movement));
+      (ex.notes || []).forEach(function (n) {
+        card.appendChild(el('p', 'prev__note', n));
+      });
+
+      host.appendChild(card);
+    });
   }
 
   /* ---------- level picker ---------- */
@@ -750,12 +802,13 @@
       tick: null
     };
     run.remaining = run.steps[0].seconds;
+    run.ready = READY_SECONDS;      // a beat before the clock starts
     keepAwake(true);
     Voice.unlock();
     buildPips();
     paintStep();
+    paintReady();
     go('work');
-    announceStep();
     run.tick = setInterval(tick, 200);
   }
 
@@ -825,6 +878,16 @@
     run.last = now;
     if (run.paused) return;
 
+    // Hold the clock until the get-ready beat is over.
+    if (run.ready > 0) {
+      var was = Math.ceil(run.ready);
+      run.ready -= dt;
+      if (run.ready <= 0) { endReady(); return; }
+      if (Math.ceil(run.ready) !== was) click(false);
+      paintReady();
+      return;
+    }
+
     run.remaining -= dt;
     run.elapsed += dt;
 
@@ -838,7 +901,35 @@
     paintPips();
   }
 
+  var READY_SECONDS = 5;
+
+  function paintReady() {
+    var box = $('ready');
+    if (!run || run.ready <= 0) { box.hidden = true; return; }
+    var s = run.steps[0];
+    box.hidden = false;
+    $('ready-name').textContent = s.ex.name;
+    $('ready-target').textContent = s.target;
+    $('ready-count').textContent = String(Math.ceil(run.ready));
+    var img = $('ready-fig');
+    var src = 'figures/c' + prefs.chartId + 'e1.png';
+    if (img.getAttribute('src') !== src) {
+      img.src = src;
+      img.onerror = function () { img.hidden = true; };
+    }
+  }
+
+  function endReady() {
+    if (!run) return;
+    run.ready = 0;
+    run.last = Date.now();
+    $('ready').hidden = true;
+    beep(1);
+    announceStep();
+  }
+
   function advance(dir, auto) {
+    if (run.ready > 0) { run.ready = 0; $('ready').hidden = true; }
     var next = run.i + dir;
     if (next < 0) next = 0;
     if (next > run.steps.length - 1) { finishWorkout(); return; }
@@ -1070,18 +1161,17 @@
     $('wel-next').textContent = welCard === WEL_CARDS ? 'Get started' : 'Next';
   }
 
+  // The starting point is the headline; the age goal is a quiet aside. Leading
+  // with the goal reads as "the app has set me to that level", which is the
+  // opposite of what the plan says.
   function renderWelcomeGoal() {
-    var box = $('wel-goal');
+    var line = $('wel-goal-line');
     var goal = ageGoalGlobal();
-    if (goal == null) { box.hidden = true; return; }
+    if (goal == null) { line.hidden = true; return; }
     var g = fromGlobal(goal);
-    box.innerHTML = '';
-    box.hidden = false;
-    box.appendChild(el('p', 'wel__goal-label', 'Your goal'));
-    box.appendChild(el('p', 'wel__goal-value', 'Chart ' + g.chartId + ' · ' + g.level));
-    var away = goal + 1;
-    box.appendChild(el('p', 'wel__goal-sub',
-      away + ' levels from the bottom of Chart 1. Most people take months.'));
+    line.hidden = false;
+    line.textContent = 'Eventual goal: Chart ' + g.chartId + ' ' + g.level +
+      ' — ' + (goal + 1) + ' levels away. Most people take months.';
   }
 
   function finishWelcome() {
@@ -1359,6 +1449,13 @@
     });
 
     $('btn-start').addEventListener('click', startWorkout);
+    $('btn-start-preview').addEventListener('click', startWorkout);
+
+    // Tap the get-ready overlay to begin immediately.
+    $('ready').addEventListener('click', endReady);
+    $('ready').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endReady(); }
+    });
 
     $('btn-pause').addEventListener('click', function () {
       if (!run) return;

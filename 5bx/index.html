@@ -43,10 +43,14 @@
         <h2 class="wel__h">How far should you go?</h2>
         <p class="wel__body">Your age sets your goal &mdash; the level worth aiming for.</p>
         <input class="wel__age" id="wel-age" type="number" min="5" max="99" inputmode="numeric" placeholder="Your age" aria-label="Your age" />
-        <div class="wel__goal" id="wel-goal" hidden></div>
-        <p class="wel__body wel__body--dim" id="wel-start-note">
-          Everyone begins at the bottom of Chart 1, whatever their age. Dr.&nbsp;Orban was firm about it.
-        </p>
+
+        <div class="wel__start">
+          <p class="wel__start-label">You start here</p>
+          <p class="wel__start-value" id="wel-start-value">Chart 1 &middot; D-</p>
+          <p class="wel__start-sub">Everyone begins at the bottom, whatever their age. Dr.&nbsp;Orban was firm about it.</p>
+        </div>
+
+        <p class="wel__goal-line" id="wel-goal-line" hidden></p>
       </div>
     </div>
 
@@ -93,8 +97,21 @@
       </div>
     </div>
 
-    <div class="dock">
+    <div class="dock dock--start">
+      <button class="btn btn--ghost btn--preview" data-go="preview">Preview</button>
       <button class="btn btn--primary btn--xl" id="btn-start">Start workout</button>
+    </div>
+  </section>
+
+  <!-- ============ PREVIEW ============ -->
+  <section class="screen" id="screen-preview" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Back">&#8592;</button>
+      <h1 class="brand">What you&rsquo;ll do</h1>
+    </header>
+    <div class="scroll" id="preview-body"></div>
+    <div class="dock">
+      <button class="btn btn--primary btn--xl" id="btn-start-preview">Start workout</button>
     </div>
   </section>
 
@@ -154,6 +171,18 @@
       <figure class="fig" id="fig">
         <img id="fig-img" alt="" decoding="async" />
       </figure>
+    </div>
+
+    <!-- Get ready: a beat to see what is coming before the clock runs. -->
+    <div class="ready" id="ready" hidden role="button" tabindex="0" aria-live="polite">
+      <div class="ready__inner">
+        <p class="ready__kicker">Get ready</p>
+        <h2 class="ready__name" id="ready-name"></h2>
+        <p class="ready__target" id="ready-target"></p>
+        <img class="ready__fig" id="ready-fig" alt="" decoding="async" />
+        <p class="ready__count" id="ready-count">5</p>
+        <p class="ready__hint">tap to start now</p>
+      </div>
     </div>
 
     <!-- Jump set: covers the screen so a tap anywhere resumes. -->
