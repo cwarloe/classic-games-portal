@@ -1,6 +1,6 @@
 /* 5BX service worker — offline-first for a fixed, tiny asset set. */
 
-var CACHE = '5bx-v1';
+var CACHE = '5bx-v3';
 var ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,37 @@ var ASSETS = [
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './icons/icon-maskable-512.png',
+  './figures/c1e1.png',
+  './figures/c1e2.png',
+  './figures/c1e3.png',
+  './figures/c1e4.png',
+  './figures/c1e5.png',
+  './figures/c2e1.png',
+  './figures/c2e2.png',
+  './figures/c2e3.png',
+  './figures/c2e4.png',
+  './figures/c2e5.png',
+  './figures/c3e1.png',
+  './figures/c3e2.png',
+  './figures/c3e3.png',
+  './figures/c3e4.png',
+  './figures/c3e5.png',
+  './figures/c4e1.png',
+  './figures/c4e2.png',
+  './figures/c4e3.png',
+  './figures/c4e4.png',
+  './figures/c4e5.png',
+  './figures/c5e1.png',
+  './figures/c5e2.png',
+  './figures/c5e3.png',
+  './figures/c5e4.png',
+  './figures/c5e5.png',
+  './figures/c6e1.png',
+  './figures/c6e2.png',
+  './figures/c6e3.png',
+  './figures/c6e4.png',
+  './figures/c6e5.png'
 ];
 
 self.addEventListener('install', function (e) {
