@@ -101,6 +101,96 @@
     }
   }
 
+  // Short, dry tick for each counted step of the stationary run.
+  function click(strong) {
+    if (!actx) return;
+    if (actx.state === 'suspended') actx.resume();
+    var t = actx.currentTime;
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(strong ? 1500 : 1150, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(strong ? 0.20 : 0.11, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + 0.06);
+  }
+
+  // Lower, rounder pair announcing the jump set.
+  function thud() {
+    if (actx) {
+      if (actx.state === 'suspended') actx.resume();
+      var t0 = actx.currentTime;
+      for (var i = 0; i < 2; i++) {
+        var o = actx.createOscillator(), g = actx.createGain();
+        var t = t0 + i * 0.17;
+        o.type = 'sine';
+        o.frequency.setValueAtTime(392, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.32, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t); o.stop(t + 0.25);
+      }
+    }
+    if (navigator.vibrate) { try { navigator.vibrate([120, 80, 120]); } catch (e) {} }
+  }
+
+  /* ---------- speech ----------
+     say() is the only seam that touches a speech engine. To move to
+     pre-recorded clips later, swap its body for an <audio> playback keyed on
+     the same short phrases; nothing else in the app needs to change.         */
+
+  var Voice = {
+    voice: null,
+    supported: ('speechSynthesis' in window),
+
+    init: function () {
+      if (!Voice.supported) return;
+      var pick = function () {
+        var vs = window.speechSynthesis.getVoices() || [];
+        var en = vs.filter(function (v) { return /^en/i.test(v.lang); });
+        // Prefer an on-device voice so cues still work with no network.
+        en.sort(function (a, b) { return (b.localService ? 1 : 0) - (a.localService ? 1 : 0); });
+        Voice.voice = en[0] || vs[0] || null;
+      };
+      pick();
+      // getVoices() is async on most browsers; it fills in after this event.
+      if (window.speechSynthesis.addEventListener) {
+        window.speechSynthesis.addEventListener('voiceschanged', pick);
+      } else {
+        window.speechSynthesis.onvoiceschanged = pick;
+      }
+    },
+
+    // iOS will not speak unless the first utterance comes from a user gesture.
+    unlock: function () {
+      if (!Voice.supported) return;
+      try {
+        var u = new SpeechSynthesisUtterance(' ');
+        u.volume = 0;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    },
+
+    say: function (text, opts) {
+      if (!Voice.supported || !prefs || !prefs.voiceCues || !text) return;
+      try {
+        if (!opts || !opts.queue) window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        if (Voice.voice) u.voice = Voice.voice;
+        u.rate = 1.05;
+        u.pitch = 1;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    },
+
+    stop: function () {
+      if (!Voice.supported) return;
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  };
+
   var wakeLock = null;
   function keepAwake(on) {
     if (!navigator.wakeLock) return;
@@ -117,7 +207,7 @@
 
   /* ============================ navigation ============================ */
 
-  var SCREENS = ['home', 'work', 'done', 'history', 'reference'];
+  var SCREENS = ['home', 'work', 'done', 'history', 'reference', 'settings'];
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -128,6 +218,7 @@
     if (body) body.scrollTop = 0;
     if (name === 'history') renderHistory();
     if (name === 'reference') renderReference();
+    if (name === 'settings') renderSettings();
     if (name === 'home') renderHome();
   }
 
@@ -312,6 +403,192 @@
     });
   }
 
+  /* ======================= exercise 5 metronome =======================
+
+     The booklet's exercise 5 is a step target, not a pace: "count a step each
+     time left foot touches floor ... every 75 steps do 10 jumps, repeat until
+     the required number of steps is completed".
+
+     So the metronome paces the steps and STOPS for each jump set — the jumps
+     are never raced against a running counter. There is room for that: even at
+     Chart 6 A+ (600 steps, the hardest in the plan) pausing for all seven jump
+     sets costs 105s and still leaves 255s of stepping.
+
+     Cadence is derived per level rather than fixed, because the targets vary
+     enormously: Chart 1 D- needs only 17 steps/min to finish inside the
+     allotment, Chart 6 A+ needs 127. Below the jog floor we simply run at the
+     floor and finish early, which is what the booklet expects at low levels.  */
+
+  var CADENCE_FLOOR = 70;    // steps/min — a natural jog, never slower
+  var CADENCE_CEIL = 200;
+
+  var Metro = {
+    on: false,
+    phase: 'idle',          // stepping | jumping | leadin | done
+    steps: 0, target: 0,
+    periodMs: 0, nextAt: 0,
+    phaseEndsAt: 0,
+    jumpEvery: 75, jumpCount: 10, jumpName: 'jumps', windowMs: 12000,
+    timer: null,
+
+    plan: function (chart, level) {
+      var ex5 = chart.exercises[4];
+      var target = chart.levels[level].steps;
+      var every = ex5.jumpEvery || 75;
+      var windowSec = prefs.jumpWindow || ex5.jumpWindowSeconds || 12;
+      // A jump set follows every full block except the one that finishes the target.
+      var sets = Math.max(0, Math.ceil(target / every) - 1);
+      var allot = D.timing.secondsPerExercise[4];
+      var stepSeconds = Math.max(30, allot - sets * windowSec);
+      var needed = target / stepSeconds * 60;
+      var cadence = Math.min(CADENCE_CEIL, Math.max(CADENCE_FLOOR, needed));
+      return {
+        target: target, every: every, count: ex5.jumpCount || 10,
+        name: ex5.jumpName || 'jumps', windowSec: windowSec,
+        sets: sets, cadence: cadence
+      };
+    },
+
+    start: function () {
+      var chart = chartById(prefs.chartId);
+      var p = Metro.plan(chart, prefs.level);
+      Metro.on = true;
+      Metro.phase = 'stepping';
+      Metro.steps = 0;
+      Metro.target = p.target;
+      Metro.jumpEvery = p.every;
+      Metro.jumpCount = p.count;
+      Metro.jumpName = p.name;
+      Metro.windowMs = p.windowSec * 1000;
+      Metro.periodMs = 60000 / p.cadence;
+      Metro.nextAt = Date.now() + Metro.periodMs;
+      if (!Metro.timer) Metro.timer = setInterval(Metro.tick, 40);
+      paintMetro();
+    },
+
+    stop: function () {
+      Metro.on = false;
+      Metro.phase = 'idle';
+      if (Metro.timer) { clearInterval(Metro.timer); Metro.timer = null; }
+      var j = $('jump');
+      if (j) j.hidden = true;
+    },
+
+    tick: function () {
+      if (!Metro.on || !run || run.paused) {
+        // Keep the schedule from firing a burst after a pause.
+        Metro.nextAt = Date.now() + Metro.periodMs;
+        Metro.phaseEndsAt = Math.max(Metro.phaseEndsAt, Date.now());
+        return;
+      }
+      var now = Date.now();
+
+      if (Metro.phase === 'jumping') {
+        if (prefs.jumpResume === 'auto' && now >= Metro.phaseEndsAt) Metro.resume();
+        else paintMetro();
+        return;
+      }
+
+      if (Metro.phase === 'leadin') {
+        if (now >= Metro.phaseEndsAt) {
+          Metro.phase = 'stepping';
+          Metro.nextAt = now + Metro.periodMs;
+          $('jump').hidden = true;
+        }
+        paintMetro();
+        return;
+      }
+
+      if (Metro.phase !== 'stepping') return;
+
+      // Drift-corrected: catch up, but never machine-gun after a stall.
+      if (now - Metro.nextAt > Metro.periodMs * 3) Metro.nextAt = now;
+      while (now >= Metro.nextAt) {
+        Metro.nextAt += Metro.periodMs;
+        Metro.step();
+        if (Metro.phase !== 'stepping') break;
+      }
+      paintMetro();
+    },
+
+    step: function () {
+      Metro.steps++;
+      var atBlock = (Metro.steps % Metro.jumpEvery) === 0;
+      click(atBlock);
+
+      if (Metro.steps >= Metro.target) {
+        Metro.phase = 'done';
+        Metro.on = false;
+        beep(2);
+        Voice.say('Step target reached');
+        return;
+      }
+      if (atBlock) Metro.beginJumps();
+    },
+
+    beginJumps: function () {
+      Metro.phase = 'jumping';
+      Metro.phaseEndsAt = Date.now() + Metro.windowMs;
+      thud();
+      Voice.say(Metro.jumpCount + ' ' + Metro.jumpName);
+      paintMetro();
+    },
+
+    // Called by the auto window expiring, or by the user tapping to resume.
+    resume: function () {
+      if (Metro.phase !== 'jumping') return;
+      Metro.phase = 'leadin';
+      Metro.phaseEndsAt = Date.now() + 2200;
+      beep(1);
+      Voice.say('Resume running');
+      paintMetro();
+    }
+  };
+
+  // Exposed for debugging a timing-sensitive feature from the console.
+  window.__metro = Metro;
+
+  function paintMetro() {
+    if (!run) return;
+    var s = run.steps[run.i];
+    if (!s || s.index !== 4 || !Metro.target) return;
+
+    $('target-big').textContent = Metro.steps + ' / ' + Metro.target + ' steps';
+
+    var j = $('jump');
+    if (Metro.phase === 'jumping') {
+      j.hidden = false;
+      var left = Math.max(0, Math.ceil((Metro.phaseEndsAt - Date.now()) / 1000));
+      $('jump-title').textContent = Metro.jumpCount + ' ' + Metro.jumpName;
+      $('jump-sub').textContent = prefs.jumpResume === 'auto'
+        ? 'resuming in ' + left + 's — tap when ready'
+        : 'tap anywhere when you are done';
+    } else if (Metro.phase === 'leadin') {
+      j.hidden = false;
+      $('jump-title').textContent = 'Get ready';
+      $('jump-sub').textContent = 'running resumes';
+    } else if (Metro.phase === 'done') {
+      j.hidden = true;
+      $('target-big').textContent = 'Target reached · ' + Metro.target + ' steps';
+    } else {
+      j.hidden = true;
+    }
+  }
+
+  function metroApplies() {
+    return prefs.metronome &&
+           run && run.steps[run.i] &&
+           run.steps[run.i].index === 4 &&
+           prefs.ex5Mode === 'stationary';
+  }
+
+  function announceStep() {
+    var s = run.steps[run.i];
+    if (!s) return;
+    var what = 'Exercise ' + (run.i + 1) + '. ' + s.ex.name + '. ' + s.target + '.';
+    Voice.say(what);
+  }
+
   function startWorkout() {
     initAudio();
     beep(1);
@@ -327,9 +604,11 @@
     };
     run.remaining = run.steps[0].seconds;
     keepAwake(true);
+    Voice.unlock();
     buildPips();
     paintStep();
     go('work');
+    announceStep();
     run.tick = setInterval(tick, 200);
   }
 
@@ -377,6 +656,10 @@
     $('fig').hidden = false;
     img.onerror = function () { $('fig').hidden = true; };
 
+    // The metronome only applies to the stationary run.
+    Metro.stop();
+    if (metroApplies()) Metro.start();
+
     paintClock();
     paintPips();
   }
@@ -417,16 +700,20 @@
     run.last = Date.now();
     if (!auto) beep(1);
     paintStep();
+    announceStep();
   }
 
   function stopTimer() {
     if (run && run.tick) { clearInterval(run.tick); run.tick = null; }
+    Metro.stop();
+    Voice.stop();
     keepAwake(false);
   }
 
   function finishWorkout() {
     beep(3);
     stopTimer();
+    Voice.say('Workout complete');
     var planned = D.timing.totalSeconds;
     pending = {
       id: String(Date.now()),
@@ -604,6 +891,101 @@
     }
   }
 
+  /* ============================ settings ============================ */
+
+  function renderSettings() {
+    $('set-voice').setAttribute('aria-checked', prefs.voiceCues ? 'true' : 'false');
+    $('set-metro').setAttribute('aria-checked', prefs.metronome ? 'true' : 'false');
+    $('voice-support').hidden = Voice.supported;
+    $('metro-opts').hidden = !prefs.metronome;
+
+    var rs = $('set-resume').querySelectorAll('.seg__btn');
+    for (var i = 0; i < rs.length; i++) {
+      rs[i].setAttribute('aria-pressed', rs[i].dataset.resume === prefs.jumpResume ? 'true' : 'false');
+    }
+    $('window-field').hidden = (prefs.jumpResume !== 'auto');
+
+    var ws = $('set-window').querySelectorAll('.seg__btn');
+    for (var k = 0; k < ws.length; k++) {
+      var v = parseInt(ws[k].dataset.window, 10);
+      ws[k].setAttribute('aria-pressed', v === (prefs.jumpWindow || 0) ? 'true' : 'false');
+    }
+    var chart = chartById(prefs.chartId);
+    $('window-hint').textContent = 'Auto uses this chart’s default of ' +
+      (chart.exercises[4].jumpWindowSeconds || 12) + 's for ' + chart.exercises[4].jumpName + '.';
+
+    renderPacePreview();
+  }
+
+  // Shows what the metronome will actually ask of you at the selected level.
+  function renderPacePreview() {
+    var host = $('pace-preview');
+    host.innerHTML = '';
+    var chart = chartById(prefs.chartId);
+    var p = Metro.plan(chart, prefs.level);
+    var stepSeconds = p.target / p.cadence * 60;
+    var totalSeconds = stepSeconds + p.sets * p.windowSec;
+    var allot = D.timing.secondsPerExercise[4];
+
+    function row(k, v) {
+      var d = el('div', 'pace-row');
+      d.appendChild(el('span', null, k));
+      d.appendChild(el('b', null, v));
+      host.appendChild(d);
+    }
+    row('Chart ' + prefs.chartId + ' · ' + prefs.level, p.target + ' steps');
+    row('Jump sets', p.sets + ' × ' + p.count + ' ' + p.name);
+    row('Pace', Math.round(p.cadence) + ' steps/min');
+    row('Estimated exercise 5', mmss(totalSeconds));
+
+    var note = el('p', 'field__hint');
+    if (totalSeconds <= allot - 20) {
+      note.textContent = 'Comfortably inside the 6 minute allotment — at this level you finish early, which the plan expects.';
+    } else if (p.cadence >= 120) {
+      // A longer jump window buys its time from the running, so at the top
+      // levels a generous window is what pushes the pace this high.
+      note.textContent = 'Demanding: this level needs the whole allotment at a hard pace. ' +
+        'Every second of jump window comes out of the running, so shorten the jump window above if you finish the jumps sooner.';
+    } else {
+      note.textContent = 'This level needs most of the allotment; the pace is set to finish right at 6 minutes.';
+    }
+    host.appendChild(note);
+  }
+
+  function wireSettings() {
+    $('set-voice').addEventListener('click', function () {
+      prefs.voiceCues = !prefs.voiceCues;
+      save(K_PREFS, prefs);
+      if (prefs.voiceCues) { initAudio(); Voice.unlock(); Voice.say('Voice cues on'); }
+      else Voice.stop();
+      renderSettings();
+    });
+
+    $('set-metro').addEventListener('click', function () {
+      prefs.metronome = !prefs.metronome;
+      save(K_PREFS, prefs);
+      if (prefs.metronome) { initAudio(); click(true); }
+      renderSettings();
+    });
+
+    $('set-resume').addEventListener('click', function (e) {
+      var b = e.target.closest('.seg__btn');
+      if (!b) return;
+      prefs.jumpResume = b.dataset.resume;
+      save(K_PREFS, prefs);
+      renderSettings();
+    });
+
+    $('set-window').addEventListener('click', function (e) {
+      var b = e.target.closest('.seg__btn');
+      if (!b) return;
+      var v = parseInt(b.dataset.window, 10);
+      prefs.jumpWindow = v || null;
+      save(K_PREFS, prefs);
+      renderSettings();
+    });
+  }
+
   /* ============================ reference ============================ */
 
   function renderReference() {
@@ -768,6 +1150,14 @@
     $('btn-next').addEventListener('click', function () { if (run) advance(1, false); });
     $('btn-prev').addEventListener('click', function () { if (run) advance(-1, false); });
 
+    // Tap anywhere on the jump overlay to get running again immediately.
+    $('jump').addEventListener('click', function () { Metro.resume(); });
+    $('jump').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); Metro.resume(); }
+    });
+
+    wireSettings();
+
     $('btn-quit').addEventListener('click', function () {
       if (!run) { go('home'); return; }
       if (!confirm('End this workout? It will not be logged.')) return;
@@ -825,7 +1215,14 @@
     .then(function (data) {
       D = data;
       prefs = load(K_PREFS, null) || { chartId: 1, level: 'D-', ex5Mode: 'stationary', age: null };
+      // Coaching aids default off, so an existing install behaves as before.
+      if (prefs.voiceCues === undefined) prefs.voiceCues = false;
+      if (prefs.metronome === undefined) prefs.metronome = false;
+      if (!prefs.jumpResume) prefs.jumpResume = 'auto';
+      if (prefs.jumpWindow === undefined) prefs.jumpWindow = null;
       if (!chartById(prefs.chartId).levels[prefs.level]) { prefs.chartId = 1; prefs.level = 'D-'; }
+      save(K_PREFS, prefs);   // persist the normalised defaults
+      Voice.init();
       sessions = load(K_SESSIONS, []);
       $('boot').hidden = true;
       $('app').hidden = false;

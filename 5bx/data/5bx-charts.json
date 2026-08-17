@@ -43,6 +43,8 @@
     ]
   },
 
+  "$comment_jumpWindow": "jumpWindowSeconds is how long the guided metronome pauses for the jump set in exercise 5. It is a pacing aid, not from the booklet: charts 4-6 use the slower semi-squat / semi-spread eagle / jack jumps. The workout settings screen can override it.",
+
   "exerciseShortNames": [
     "Toe touching",
     "Sit-up",
@@ -101,7 +103,8 @@
           ],
           "jumpName": "scissor jumps",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 12
         }
       ],
       "alternatives": { "runLabel": "½ mile run", "walkLabel": "1 mile walk" },
@@ -168,7 +171,8 @@
           ],
           "jumpName": "astride jumps",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 12
         }
       ],
       "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
@@ -239,7 +243,8 @@
           ],
           "jumpName": "half knee bends",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 12
         }
       ],
       "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
@@ -318,7 +323,8 @@
           ],
           "jumpName": "semi-squat jumps",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 15
         }
       ],
       "alternatives": { "runLabel": "1 mile run", "walkLabel": "2 mile walk" },
@@ -391,7 +397,8 @@
           ],
           "jumpName": "semi-spread eagle jumps",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 15
         }
       ],
       "alternatives": { "runLabel": "1 mile run", "walkLabel": null },
@@ -462,7 +469,8 @@
           ],
           "jumpName": "jack jumps",
           "jumpEvery": 75,
-          "jumpCount": 10
+          "jumpCount": 10,
+          "jumpWindowSeconds": 15
         }
       ],
       "alternatives": { "runLabel": "1 mile run", "walkLabel": null },
