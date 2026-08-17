@@ -370,6 +370,13 @@
     box.appendChild(el('p', null, ex.movement));
     (ex.notes || []).forEach(function (n) { box.appendChild(el('p', 'note', n)); });
 
+    // The original booklet's illustration for this exercise, as a reminder.
+    var img = $('fig-img');
+    img.src = 'figures/c' + prefs.chartId + 'e' + (run.i + 1) + '.png';
+    img.alt = 'Illustration: ' + ex.name;
+    $('fig').hidden = false;
+    img.onerror = function () { $('fig').hidden = true; };
+
     paintClock();
     paintPips();
   }

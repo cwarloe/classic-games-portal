@@ -253,6 +253,19 @@ textarea {
 .clock.is-paused { opacity: .42; }
 .clock.is-low { color: var(--accent); }
 
+.fig {
+  width: 100%; max-width: 460px;
+  margin: 14px 0 6px; padding: 12px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.fig[hidden] { display: none; }
+.fig img {
+  display: block; width: 100%; height: auto;
+  opacity: .92;
+}
+
 .instructions { text-align: left; width: 100%; max-width: 460px; }
 .instructions p { margin: 0 0 9px; font-size: 15.5px; }
 .instructions .lead { color: var(--fg); font-weight: 650; }

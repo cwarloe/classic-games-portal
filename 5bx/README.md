@@ -12,6 +12,7 @@ Open `5bx/index.html` over HTTP (the app `fetch`es its data file, so `file://` w
 | `index.html` | Screen markup (home, workout, log, history, reference). |
 | `app.js` | All behaviour. No dependencies. |
 | `styles.css` | Dark theme, large tap targets. |
+| `figures/` | The booklet's exercise illustrations, `c{chart}e{exercise}.png`. Regenerate with `tools/extract-5bx-figures.py`. |
 | `sw.js` | Service worker — offline-first over a fixed asset list. |
 | `manifest.webmanifest` | Install metadata. |
 
@@ -50,6 +51,19 @@ Every rep count, step count and time was transcribed from a scan of the original
 The booklet's rule is: move up one level only once you can complete *all* the required movements at your present level **within 11 minutes**. It also caps how fast you may climb, by age (1 day per level at 20 or under, up to 10 days per level at 60+).
 
 The app applies both. After you log a session marked "completed within 11 minutes", the home screen suggests the next level — but only once you have logged sessions on at least the required number of distinct days at that level. Set your age on the Reference screen to enable the day requirement; leave it unset and only the 11-minute rule applies. `A+` on one chart advances to `D-` on the next.
+
+## Illustrations
+
+Each exercise shows the original booklet's stick figures under its instructions during a workout, as a form reminder. They are extracted from the scan by `tools/extract-5bx-figures.py` into white silhouettes on transparent backgrounds (about 350 KB for all 30, precached for offline use).
+
+Reclining poses print as very wide, short strips — fine on paper, roughly 15 px tall on a phone. The tool splits those on their whitespace gutters and stacks the poses vertically so each renders at full card width.
+
+To regenerate after changing the extraction, supply your own scan and bump `CACHE` in `sw.js` so installed devices pick up the new images:
+
+```bash
+pip install pymupdf pillow numpy
+python3 tools/extract-5bx-figures.py path/to/5bx-plan.pdf
+```
 
 ## Notes
 
