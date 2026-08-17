@@ -65,6 +65,28 @@ pip install pymupdf pillow numpy
 python3 tools/extract-5bx-figures.py path/to/5bx-plan.pdf
 ```
 
+## Coaching aids (Settings)
+
+Both are **off by default**; the workout is unchanged until you switch them on.
+
+**Voice cues** — speaks the exercise, its target and each jump set. Uses the browser's built-in `speechSynthesis` with an on-device voice, so it needs no network and adds nothing to the download. `Voice.say()` in `app.js` is the only function that touches a speech engine: to move to pre-recorded clips, swap its body for audio playback keyed on the same short phrases and nothing else changes.
+
+iOS will not speak until an utterance comes from a user gesture, so `Voice.unlock()` fires on the "Start workout" tap alongside the WebAudio unlock.
+
+**Step metronome** — paces exercise 5 and counts steps toward the target, and **stops for every jump set** so the jumps are never raced against a running counter. Tap anywhere to resume early; the "wait until I tap" mode never auto-resumes.
+
+Cadence is derived per level rather than fixed, because the targets vary enormously:
+
+| Level | Steps | Jump sets | Pace | Exercise 5 |
+|---|---|---|---|---|
+| Chart 1 D− | 100 | 1 | 70/min (floor) | ~1:38, finishes early |
+| Chart 3 C | 465 | 6 | 97/min | 6:00 |
+| Chart 6 A+ | 600 | 7 | 141/min | 6:00 |
+
+`cadence = clamp(steps / (allotment − jumpTime) × 60, 70, 200)`. Below the 70/min jog floor the run simply finishes early, which is what the booklet expects at low levels — *"You may not need the full 11 minutes when you start."*
+
+Note the tension at the top: every second of jump window is taken out of the running time, so a generous window is what pushes Chart 6 A+ to 141 steps/min. `jumpWindowSeconds` per chart in the data file sets the default (12s for charts 1–3, 15s for the slower jumps in 4–6); Settings can override it.
+
 ## Notes
 
 - Exercise 5 can be swapped for the booklet's own alternatives (½ or 1 mile run, 1 or 2 mile walk). The timer then counts the alternative's allotted time, so the session runs longer than 11 minutes by design.

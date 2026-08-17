@@ -22,6 +22,7 @@
   <section class="screen" id="screen-home">
     <header class="topbar">
       <h1 class="brand">5BX</h1>
+      <button class="icon-btn" data-go="settings" aria-label="Settings">&#9881;</button>
       <button class="icon-btn" data-go="reference" aria-label="Reference">?</button>
     </header>
 
@@ -87,6 +88,15 @@
       </figure>
     </div>
 
+    <!-- Jump set: covers the screen so a tap anywhere resumes. -->
+    <div class="jump" id="jump" hidden role="button" tabindex="0" aria-live="assertive">
+      <div class="jump__inner">
+        <p class="jump__kicker">Pause the run</p>
+        <h2 class="jump__title" id="jump-title"></h2>
+        <p class="jump__sub" id="jump-sub"></p>
+      </div>
+    </div>
+
     <div class="dock dock--work">
       <button class="btn btn--ghost btn--sq" id="btn-prev" aria-label="Previous exercise">&#8676;</button>
       <button class="btn btn--primary btn--wide" id="btn-pause">Pause</button>
@@ -135,6 +145,61 @@
       </div>
       <h2 class="list-head">Sessions</h2>
       <ul class="log" id="log"></ul>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="screen-settings" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Back">&#8592;</button>
+      <h1 class="brand">Settings</h1>
+    </header>
+    <div class="scroll">
+      <p class="set-intro">Coaching aids for the guided workout. Both are off by default &mdash; the workout behaves exactly as before until you turn them on.</p>
+
+      <div class="set-row">
+        <div class="set-row__text">
+          <h2>Voice cues</h2>
+          <p>Speaks the exercise, its target and the jump sets, so you don&rsquo;t have to look at the screen. Uses your device&rsquo;s built-in voice &mdash; no network needed.</p>
+        </div>
+        <button class="toggle" id="set-voice" role="switch" aria-checked="false"><span></span></button>
+      </div>
+      <p class="set-note" id="voice-support" hidden>This browser has no speech support, so voice cues will stay silent.</p>
+
+      <div class="set-row">
+        <div class="set-row__text">
+          <h2>Step metronome</h2>
+          <p>Ticks the pace for the stationary run and counts your steps toward the target. Pauses for every jump set.</p>
+        </div>
+        <button class="toggle" id="set-metro" role="switch" aria-checked="false"><span></span></button>
+      </div>
+
+      <div id="metro-opts">
+        <div class="field">
+          <label class="field__label">After a jump set</label>
+          <div class="seg seg--stack" id="set-resume" role="group">
+            <button class="seg__btn" data-resume="auto">Resume automatically</button>
+            <button class="seg__btn" data-resume="tap">Wait until I tap</button>
+          </div>
+          <p class="field__hint">Either way, tapping anywhere resumes immediately.</p>
+        </div>
+
+        <div class="field" id="window-field">
+          <label class="field__label">Time allowed for the jumps</label>
+          <div class="seg" id="set-window" role="group">
+            <button class="seg__btn" data-window="0">Auto</button>
+            <button class="seg__btn" data-window="10">10s</button>
+            <button class="seg__btn" data-window="15">15s</button>
+            <button class="seg__btn" data-window="20">20s</button>
+          </div>
+          <p class="field__hint" id="window-hint"></p>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title">Pace at your current level</h2>
+          <div id="pace-preview"></div>
+        </div>
+      </div>
     </div>
   </section>
 
