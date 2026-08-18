@@ -52,11 +52,21 @@ Every rep count, step count and time was transcribed from a scan of the original
 
 **Preview** — one tap from Today, beside Start: all five exercises with figures, targets and instructions. Today already lists the exercises and targets; what it cannot show is what the movements look like, and the figures otherwise only appear mid-exercise when it is too late to study them. Start stays primary and full-size, so the happy path for a returning user is still a single tap.
 
-**Splash** — a brief branded beat on cold start that auto-dismisses after 1.5s. On *resume* it waits for a tap, and only when the app has been in the background 20+ minutes and no workout is running. An installed PWA resuming from background never re-runs boot, so without this you come back to whatever screen you left. A workout in progress is never interrupted.
+**Start screen** — the branded screen on launch waits for a tap; opening the app should feel like opening an app, not being dropped into a workout. It also appears on *resume*, but only when the app has been in the background 20+ minutes and no workout is running — an installed PWA resuming from background never re-runs boot, so without this you come back to whatever screen you left. A workout in progress is never interrupted. `splashAutoMs` in Advanced restores the old auto-dismissing beat if you'd rather skip the tap.
 
 **Breaks between exercises** — a transition before *every* exercise (not just the first) showing what's next: name, target, figure and a countdown. Tap to start immediately. Default 10s, configurable 0/5/10/15/20 in Settings.
 
 **Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
+
+## Navigation
+
+Four screens are places you can *be* — **Today, History, Reference, Settings** — and a tab bar keeps all four reachable from any of them. The focused flows (welcome, level picker, preview, workout, finish) hide the bar, because those are things you finish or back out of rather than places to live. Before this, Today's own topbar and a ghost button row were the only way across, so the app read as a workout screen with some links rather than something you could move around in.
+
+### Leaving a workout without losing it
+
+The pause sheet's fourth option is **Home — keep this workout**. It pauses the run and returns you to Today, where a banner says which exercise you're on and offers **Back to the workout** or **Discard it**; the Start button becomes **Resume workout**. `tick()` already returned early while paused, so nothing accrues on either clock while you're away.
+
+Previously the only exits from a workout were Resume, End and save, and Discard — there was no way to go look something up in the Reference and come back.
 
 ## Settings, and what is deliberately not settable
 

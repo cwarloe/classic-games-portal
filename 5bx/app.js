@@ -232,6 +232,12 @@
   /* ============================ navigation ============================ */
 
   var SCREENS = ['splash', 'welcome', 'home', 'picker', 'preview', 'work', 'done', 'history', 'reference', 'settings'];
+
+  /* The four screens you can be "in" rather than passing through. They keep the
+     tab bar; the focused flows (welcome, picker, preview, workout, finish) hide
+     it, because they are places you finish or back out of, not places to live. */
+  var TABS = ['home', 'history', 'reference', 'settings'];
+
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -240,6 +246,7 @@
     var sc = $('screen-' + name);
     var body = sc && sc.querySelector('.scroll');
     if (body) body.scrollTop = 0;
+    paintTabs(name);
     if (name === 'history') renderHistory();
     if (name === 'reference') renderReference();
     if (name === 'settings') renderSettings();
@@ -247,6 +254,25 @@
     if (name === 'preview') renderPreview();
     if (name === 'welcome') renderWelcome();
     if (name === 'home') renderHome();
+  }
+
+  function paintTabs(name) {
+    var on = TABS.indexOf(name) >= 0;
+    $('tabbar').hidden = !on;
+    document.body.classList.toggle('has-tabs', on);
+    var bs = $('tabbar').querySelectorAll('.tab');
+    for (var i = 0; i < bs.length; i++) {
+      bs[i].setAttribute('aria-current', bs[i].dataset.tab === name ? 'page' : 'false');
+    }
+  }
+
+  function wireTabs() {
+    var bs = $('tabbar').querySelectorAll('.tab');
+    for (var i = 0; i < bs.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () { go(b.dataset.tab); });
+      })(bs[i]);
+    }
   }
 
   /* ============================ home ============================ */
@@ -430,12 +456,48 @@
     else bits.push(st.daysAtLevel + (st.daysAtLevel === 1 ? ' day' : ' days') + ' at this level');
     $('today-meta').textContent = bits.join(' · ');
     renderSubChip();
+    renderResume();
 
     renderJourney($('today-journey'));
     renderTargets();
     renderNewLevel();
     renderLayoff();
     renderSuggestion();
+  }
+
+  /* You can leave a workout to look something up without losing it. Today then
+     has to say so loudly, because a paused run you have forgotten about is
+     worse than no run at all.                                                */
+  function renderResume() {
+    var box = $('resume-banner');
+    var btn = $('btn-start');
+    box.innerHTML = '';
+    // Preview is a pre-workout aid; mid-workout it just crowds the way back in.
+    if (!run) {
+      box.hidden = true;
+      btn.textContent = 'Start workout';
+      $('btn-preview').hidden = false;
+      return;
+    }
+    box.hidden = false;
+    btn.textContent = 'Resume workout';
+    $('btn-preview').hidden = true;
+    box.appendChild(el('h3', null, 'Workout paused'));
+    box.appendChild(el('p', null, 'Chart ' + prefs.chartId + ' · ' + prefs.level + ' — exercise ' +
+      (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].ex.name + '.'));
+    var row = el('div', 'notice__row');
+    var back = el('button', 'btn btn--primary', 'Back to the workout');
+    back.addEventListener('click', function () { go('work'); });
+    var drop = el('button', 'btn btn--ghost', 'Discard it');
+    drop.addEventListener('click', function () {
+      if (!confirm('Discard this workout? It will not be logged.')) return;
+      stopTimer();
+      run = null;
+      $('btn-pause').textContent = 'Pause';
+      renderHome();
+    });
+    row.appendChild(back); row.appendChild(drop);
+    box.appendChild(row);
   }
 
   /* A substitution is sticky, so Today says so plainly rather than leaving you
@@ -965,6 +1027,7 @@
   }
 
   function startWorkout() {
+    if (run) { go('work'); return; }        // a paused workout is resumed, not replaced
     initAudio();
     beep(1);
     run = {
@@ -1435,7 +1498,7 @@
   function showSplash(auto) {
     if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
     $('splash-level').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
-    $('splash-hint').textContent = auto ? '' : 'tap to continue';
+    $('splash-hint').textContent = auto ? '' : 'tap to begin';
     go('splash');
     if (auto) splashTimer = setTimeout(dismissSplash, opt('splashAutoMs'));
   }
@@ -1605,7 +1668,7 @@
     { key: 'layoffDropDays',    label: 'Break before dropping back', unit: 'days',      min: 2,   max: 90,  step: 1 },
     { key: 'layoffRestartDays', label: 'Break before Chart 1 again', unit: 'days',      min: 7,   max: 365, step: 1 },
     { key: 'layoffDropLevels',  label: 'Levels to drop back',        unit: 'levels',    min: 1,   max: 12,  step: 1 },
-    { key: 'splashAutoMs',      label: 'Splash on launch',           unit: 'ms',        min: 0,   max: 5000, step: 100 },
+    { key: 'splashAutoMs',      label: 'Auto-dismiss start screen',  unit: 'ms, 0 waits', min: 0, max: 5000, step: 100 },
     { key: 'resumeAfterMinutes',label: 'Splash after away for',      unit: 'min',       min: 1,   max: 240, step: 1 },
     { key: 'voiceRate',         label: 'Voice speed',                unit: '\u00d7',   min: 0.6, max: 1.6, step: 0.05 }
   ];
@@ -1886,6 +1949,10 @@
     });
 
     $('sheet-resume').addEventListener('click', function () { closeSheet(true); });
+    $('sheet-home').addEventListener('click', function () {
+      closeSheet(false);                    // stays paused; the run is kept alive
+      go('home');
+    });
     $('sheet-end').addEventListener('click', function () {
       $('sheet').hidden = true;
       finishWorkout();
@@ -1976,8 +2043,10 @@
       $('boot').hidden = true;
       $('app').hidden = false;
       wire();
-      wireSplash();
-      showSplash(true);      // brief branded beat, auto-dismisses
+      wireSplash(); wireTabs();
+      // Opening the app should feel like opening an app: the start screen waits
+      // for you. splashAutoMs > 0 restores the old auto-dismissing beat.
+      showSplash(opt('splashAutoMs') > 0);
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(function () {});
