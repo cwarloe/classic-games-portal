@@ -15,6 +15,7 @@
   --radius: 14px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  --tabh: 58px;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -461,6 +462,7 @@ textarea {
 
 .dock--start { gap: 10px; }
 .btn--preview { flex: 0 0 34%; min-height: 64px; font-size: 17px; }
+.btn--preview[hidden] { display: none; }
 .dock--start .btn--xl { flex: 1 1 auto; width: auto; }
 
 /* ---------- get ready overlay ---------- */
@@ -517,6 +519,47 @@ textarea {
 
 /* ---------- settings ---------- */
 .set-intro { margin: 18px 0 4px; font-size: 15px; color: var(--fg-dim); }
+.set-head {
+  margin: 30px 0 0; padding-top: 22px;
+  border-top: 1px solid var(--line);
+  font-size: 18px; font-weight: 800;
+}
+.field--first { margin-top: 18px; }
+
+/* Exercise 5 options: the printed exercise reads as the default, the
+   booklet's alternatives read as what they are. */
+.seg--rich { gap: 10px; }
+.seg__btn--rich {
+  display: block; text-align: left;
+  min-height: 0; padding: 12px 14px;
+}
+.seg__tag {
+  display: block;
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--fg-dim);
+}
+.seg__label { display: block; font-size: 17px; font-weight: 700; margin-top: 2px; }
+.seg__sub { display: block; font-size: 14px; font-weight: 500; color: var(--fg-dim); margin-top: 2px; }
+.seg__btn--rich[aria-pressed="true"] .seg__tag,
+.seg__btn--rich[aria-pressed="true"] .seg__sub { color: rgba(26, 13, 6, .72); }
+
+/* Today: a substitution is sticky, so it gets a visible badge with a way out. */
+.subchip {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px; padding: 9px 10px 9px 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg-2);
+}
+.subchip[hidden] { display: none; }
+.subchip__text { flex: 1 1 auto; font-size: 14.5px; color: var(--fg-dim); }
+.subchip__undo {
+  flex: 0 0 auto;
+  min-height: 38px; padding: 0 14px;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--fg);
+  font: inherit; font-size: 14.5px; font-weight: 650; cursor: pointer;
+}
 .set-row {
   display: flex; align-items: flex-start; gap: 14px;
   padding: 18px 0;
@@ -727,3 +770,36 @@ textarea {
 
 .ref-intro { width: 100%; margin-top: 18px; }
 .work-meta__pos { display: block; font-size: 12px; color: var(--fg-dim); font-weight: 600; }
+
+/* ---------- tab bar ----------
+   The app has four places you can be, and they should be reachable from any of
+   them. Focused flows (welcome, picker, preview, workout, finish) hide it. */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+  display: flex;
+  height: calc(var(--tabh) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+}
+.tabbar[hidden] { display: none; }
+.tab {
+  flex: 1 1 25%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  border: 0; background: transparent; color: var(--fg-dim);
+  font: inherit; cursor: pointer; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab__icon { font-size: 19px; line-height: 1; }
+.tab__label { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.tab[aria-current="page"] { color: var(--accent); }
+
+/* The bar overlays the viewport, so screens that keep it give back the space. */
+body.has-tabs .screen { padding-bottom: calc(var(--tabh) + var(--safe-b)); }
+body.has-tabs .dock { padding-bottom: 12px; }
+
+/* A workout you stepped away from - loud, because a forgotten one is worse
+   than none at all. */
+.notice--resume { border-color: var(--accent-2); background: rgba(255, 107, 53, .12); }
+.notice--resume h3 { color: var(--accent-2); }

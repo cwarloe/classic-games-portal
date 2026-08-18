@@ -55,7 +55,7 @@
     "layoffDropDays": 14,
     "layoffRestartDays": 60,
     "layoffDropLevels": 3,
-    "splashAutoMs": 1500,
+    "splashAutoMs": 0,
     "resumeAfterMinutes": 20,
     "voiceRate": 1.05
   },

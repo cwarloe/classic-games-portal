@@ -66,11 +66,10 @@
   <section class="screen" id="screen-home" hidden>
     <header class="topbar">
       <h1 class="brand">5BX</h1>
-      <button class="icon-btn" data-go="settings" aria-label="Settings">&#9881;</button>
-      <button class="icon-btn" data-go="reference" aria-label="Reference">?</button>
     </header>
 
     <div class="scroll">
+      <div id="resume-banner" class="notice notice--resume" hidden></div>
       <div id="newlevel" class="notice notice--new" hidden></div>
       <div id="layoff" class="notice" hidden></div>
       <div id="suggestion" class="suggestion" hidden></div>
@@ -86,20 +85,18 @@
 
       <div class="journey" id="today-journey"></div>
 
+      <div class="subchip" id="today-sub" hidden></div>
+
       <div class="card">
         <h2 class="card__title">Today&rsquo;s targets</h2>
         <ol class="targets" id="targets"></ol>
-        <p class="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
+        <p class="total-line" id="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
       </div>
 
-      <div class="row-btns">
-        <button class="btn btn--ghost" data-go="history">History</button>
-        <button class="btn btn--ghost" data-go="reference">Reference</button>
-      </div>
     </div>
 
     <div class="dock dock--start">
-      <button class="btn btn--ghost btn--preview" data-go="preview">Preview</button>
+      <button class="btn btn--ghost btn--preview" id="btn-preview" data-go="preview">Preview</button>
       <button class="btn btn--primary btn--xl" id="btn-start">Start workout</button>
     </div>
   </section>
@@ -133,12 +130,6 @@
       <div class="field">
         <label class="field__label">Level</label>
         <div class="grid-levels" id="level-picker" role="group" aria-label="Level"></div>
-      </div>
-
-      <div class="field">
-        <label class="field__label">Exercise 5</label>
-        <div class="seg seg--stack" id="ex5-picker" role="group" aria-label="Exercise 5 mode"></div>
-        <p class="field__hint" id="ex5-note"></p>
       </div>
 
       <p class="field__hint" id="picker-caution"></p>
@@ -194,6 +185,7 @@
         <ol class="sheet__list" id="sheet-list"></ol>
         <div class="sheet__btns">
           <button class="btn btn--primary btn--xl" id="sheet-resume">Resume</button>
+          <button class="btn btn--ghost" id="sheet-home">Home &mdash; keep this workout</button>
           <button class="btn btn--ghost" id="sheet-end">End and save</button>
           <button class="btn btn--ghost" id="sheet-discard">Discard workout</button>
         </div>
@@ -267,7 +259,14 @@
       <h1 class="brand">Settings</h1>
     </header>
     <div class="scroll">
-      <p class="set-intro">Coaching aids for the guided workout. Both are off by default &mdash; the workout behaves exactly as before until you turn them on.</p>
+      <div class="field field--first">
+        <label class="field__label">Exercise 5</label>
+        <div class="seg seg--stack seg--rich" id="ex5-picker" role="group" aria-label="Exercise 5"></div>
+        <p class="field__hint" id="ex5-note"></p>
+      </div>
+
+      <h2 class="set-head">Coaching aids</h2>
+      <p class="set-intro">Both are off by default &mdash; the workout behaves exactly as before until you turn them on. They apply to the stationary run only.</p>
 
       <div class="set-row">
         <div class="set-row__text">
@@ -359,6 +358,21 @@
     </div>
   </section>
 
+
+<nav class="tabbar" id="tabbar" aria-label="Main" hidden>
+  <button class="tab" data-tab="home">
+    <span class="tab__icon" aria-hidden="true">&#9673;</span><span class="tab__label">Today</span>
+  </button>
+  <button class="tab" data-tab="history">
+    <span class="tab__icon" aria-hidden="true">&#9776;</span><span class="tab__label">History</span>
+  </button>
+  <button class="tab" data-tab="reference">
+    <span class="tab__icon" aria-hidden="true">&#9432;</span><span class="tab__label">Reference</span>
+  </button>
+  <button class="tab" data-tab="settings">
+    <span class="tab__icon" aria-hidden="true">&#9881;</span><span class="tab__label">Settings</span>
+  </button>
+</nav>
 </div>
 
 <div id="boot" class="boot">Loading&hellip;</div>

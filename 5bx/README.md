@@ -52,11 +52,21 @@ Every rep count, step count and time was transcribed from a scan of the original
 
 **Preview** — one tap from Today, beside Start: all five exercises with figures, targets and instructions. Today already lists the exercises and targets; what it cannot show is what the movements look like, and the figures otherwise only appear mid-exercise when it is too late to study them. Start stays primary and full-size, so the happy path for a returning user is still a single tap.
 
-**Splash** — a brief branded beat on cold start that auto-dismisses after 1.5s. On *resume* it waits for a tap, and only when the app has been in the background 20+ minutes and no workout is running. An installed PWA resuming from background never re-runs boot, so without this you come back to whatever screen you left. A workout in progress is never interrupted.
+**Start screen** — the branded screen on launch waits for a tap; opening the app should feel like opening an app, not being dropped into a workout. It also appears on *resume*, but only when the app has been in the background 20+ minutes and no workout is running — an installed PWA resuming from background never re-runs boot, so without this you come back to whatever screen you left. A workout in progress is never interrupted. `splashAutoMs` in Advanced restores the old auto-dismissing beat if you'd rather skip the tap.
 
 **Breaks between exercises** — a transition before *every* exercise (not just the first) showing what's next: name, target, figure and a countdown. Tap to start immediately. Default 10s, configurable 0/5/10/15/20 in Settings.
 
 **Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
+
+## Navigation
+
+Four screens are places you can *be* — **Today, History, Reference, Settings** — and a tab bar keeps all four reachable from any of them. The focused flows (welcome, level picker, preview, workout, finish) hide the bar, because those are things you finish or back out of rather than places to live. Before this, Today's own topbar and a ghost button row were the only way across, so the app read as a workout screen with some links rather than something you could move around in.
+
+### Leaving a workout without losing it
+
+The pause sheet's fourth option is **Home — keep this workout**. It pauses the run and returns you to Today, where a banner says which exercise you're on and offers **Back to the workout** or **Discard it**; the Start button becomes **Resume workout**. `tick()` already returned early while paused, so nothing accrues on either clock while you're away.
+
+Previously the only exits from a workout were Resume, End and save, and Discard — there was no way to go look something up in the Reference and come back.
 
 ## Settings, and what is deliberately not settable
 
@@ -80,6 +90,16 @@ Today shows a banner when you arrive at a level you have not looked at (`prefs.l
 - new chart — `Sit-up, hands behind head — was Sit-up · 23 → 20 reps`
 
 Opening the preview acknowledges the level, so the banner appears once.
+
+## Exercise 5 and its substitutions
+
+Exercise 5 is the stationary run, and it stays the default — everything the app adds hangs off it: the metronome, the step count, the jump windows, the pace preview. The booklet offers two alternatives ("if you prefer, you may run or walk the recommended distance in the required time"), and the app offers them as exactly that.
+
+The choice lives in **Settings**, not on the level picker. It sat next to Chart and Level as a third field of equal weight, which read as a decision you were meant to make rather than a substitution you might occasionally want. Each option is now labelled for what it is — *As printed* versus *Substitution* — and the hint says out loud that the metronome, step count and jump prompts go quiet while a substitution is active.
+
+Which alternatives exist is the booklet's own gating, not ours: the run is ½ mile on Chart 1 and 1 mile from Chart 2 up; the walk is offered on Charts 1–4 and disappears from Chart 5. Changing to a chart that doesn't offer your substitution falls back to the stationary run.
+
+The setting is sticky, so Today carries an `Exercise 5: 1 mile run · Undo` chip whenever one is active — otherwise the only signal was a small "substituted" label and the quiet absence of the metronome. Today's footer also stops claiming 11 minutes: a substitution counts its own allotted time (Chart 1 D− with the ½ mile run is 13 minutes), which is longer than 11 by design.
 
 ## Two clocks
 
@@ -169,7 +189,6 @@ Note the tension at the top: every second of jump window is taken out of the run
 
 ## Notes
 
-- Exercise 5 can be swapped for the booklet's own alternatives (½ or 1 mile run, 1 or 2 mile walk). The timer then counts the alternative's allotted time, so the session runs longer than 11 minutes by design.
 - Audio cue is a WebAudio beep; it needs the tap on "Start workout" to unlock, which is why cues are silent if you jump straight into a screen. Vibration is used where supported.
 - The screen wake lock is requested during a workout where the browser supports it.
 - History can be exported as JSON from the ⇩ button (copies to clipboard).

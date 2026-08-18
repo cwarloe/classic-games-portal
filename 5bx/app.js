@@ -232,6 +232,12 @@
   /* ============================ navigation ============================ */
 
   var SCREENS = ['splash', 'welcome', 'home', 'picker', 'preview', 'work', 'done', 'history', 'reference', 'settings'];
+
+  /* The four screens you can be "in" rather than passing through. They keep the
+     tab bar; the focused flows (welcome, picker, preview, workout, finish) hide
+     it, because they are places you finish or back out of, not places to live. */
+  var TABS = ['home', 'history', 'reference', 'settings'];
+
   function go(name) {
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
@@ -240,6 +246,7 @@
     var sc = $('screen-' + name);
     var body = sc && sc.querySelector('.scroll');
     if (body) body.scrollTop = 0;
+    paintTabs(name);
     if (name === 'history') renderHistory();
     if (name === 'reference') renderReference();
     if (name === 'settings') renderSettings();
@@ -249,21 +256,98 @@
     if (name === 'home') renderHome();
   }
 
+  function paintTabs(name) {
+    var on = TABS.indexOf(name) >= 0;
+    $('tabbar').hidden = !on;
+    document.body.classList.toggle('has-tabs', on);
+    var bs = $('tabbar').querySelectorAll('.tab');
+    for (var i = 0; i < bs.length; i++) {
+      bs[i].setAttribute('aria-current', bs[i].dataset.tab === name ? 'page' : 'false');
+    }
+  }
+
+  function wireTabs() {
+    var bs = $('tabbar').querySelectorAll('.tab');
+    for (var i = 0; i < bs.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () { go(b.dataset.tab); });
+      })(bs[i]);
+    }
+  }
+
   /* ============================ home ============================ */
+
+  /* ---------- exercise 5 ----------
+     Exercise 5 is the stationary run; the booklet offers a run or a walk as
+     substitutions. Stationary is the default and stays visually primary: the
+     metronome, the step count and the jump prompts all hang off it, and the
+     walk is not offered at all above Chart 4 - that gating is the booklet's,
+     not ours.                                                                */
 
   function ex5Modes() {
     var c = chartById(prefs.chartId);
     var lv = c.levels[prefs.level];
+    var ex = c.exercises[4];
     // Charts 5 and 6 print the run target as mins:secs; the others as minutes.
     var unit = function (v) { return String(v).indexOf(':') >= 0 ? v : v + ' min'; };
-    var out = [{ id: 'stationary', label: 'Stationary run — ' + lv.steps + ' steps' }];
+    var out = [{
+      id: 'stationary', tag: 'As printed', label: 'Stationary run',
+      sub: lv.steps + ' steps · every ' + ex.jumpEvery + ', ' + ex.jumpCount + ' ' + ex.jumpName
+    }];
     if (c.alternatives.runLabel) {
-      out.push({ id: 'run', label: c.alternatives.runLabel + ' in ' + unit(lv.runDisplay) });
+      out.push({ id: 'run', tag: 'Substitution', label: c.alternatives.runLabel,
+                 sub: 'in ' + unit(lv.runDisplay) });
     }
     if (c.alternatives.walkLabel) {
-      out.push({ id: 'walk', label: c.alternatives.walkLabel + ' in ' + unit(lv.walkDisplay) });
+      out.push({ id: 'walk', tag: 'Substitution', label: c.alternatives.walkLabel,
+                 sub: 'in ' + unit(lv.walkDisplay) });
     }
     return out;
+  }
+
+  function ex5Label() {
+    var m = ex5Modes();
+    for (var i = 0; i < m.length; i++) if (m[i].id === prefs.ex5Mode) return m[i].label;
+    return 'Stationary run';
+  }
+
+  function ex5Hint() {
+    var c = chartById(prefs.chartId);
+    var bits = [D.substitutionNote];
+    if (prefs.ex5Mode !== 'stationary') {
+      bits.push('The metronome, step count and jump prompts only work for the stationary run, ' +
+                'so they stay off while exercise 5 is substituted.');
+    }
+    bits.push(c.alternatives.walkLabel
+      ? 'On Chart ' + c.id + ' the alternatives are the ' + c.alternatives.runLabel +
+        ' and the ' + c.alternatives.walkLabel + '.'
+      : 'From Chart 5 the booklet drops the walk and offers the run only.');
+    return bits.join(' ');
+  }
+
+  // Rendered into Settings; the level picker stays about the level alone.
+  function renderEx5() {
+    var modes = ex5Modes();
+    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+    }
+    var host = $('ex5-picker');
+    host.innerHTML = '';
+    modes.forEach(function (m) {
+      var b = el('button', 'seg__btn seg__btn--rich');
+      b.setAttribute('aria-pressed', m.id === prefs.ex5Mode ? 'true' : 'false');
+      b.appendChild(el('span', 'seg__tag', m.tag));
+      b.appendChild(el('span', 'seg__label', m.label));
+      b.appendChild(el('span', 'seg__sub', m.sub));
+      b.addEventListener('click', function () {
+        prefs.ex5Mode = m.id;
+        save(K_PREFS, prefs);
+        renderEx5();
+      });
+      host.appendChild(b);
+    });
+    $('ex5-note').textContent = ex5Hint();
   }
 
   function renderTargets() {
@@ -297,6 +381,22 @@
       li.appendChild(reps);
       list.appendChild(li);
     });
+
+    // A substitution has its own allotted time, so the session is no longer 11
+    // minutes and the footer must not keep claiming it is.
+    var secs = D.timing.totalSeconds;
+    if (prefs.ex5Mode === 'run') secs = firstFourSeconds() + lv.runSeconds;
+    else if (prefs.ex5Mode === 'walk') secs = firstFourSeconds() + lv.walkSeconds;
+    var line = $('total-line');
+    line.innerHTML = '';
+    line.appendChild(document.createTextNode('5 exercises · '));
+    line.appendChild(el('strong', null, secs % 60 === 0 ? (secs / 60) + ' minutes' : mmss(secs)));
+  }
+
+  function firstFourSeconds() {
+    var t = 0;
+    for (var i = 0; i < 4; i++) t += D.timing.secondsPerExercise[i];
+    return t;
   }
 
   /* ---------- the journey bar ----------
@@ -354,14 +454,67 @@
     var bits = [];
     if (st.daysAtLevel === 0) bits.push('Not started at this level');
     else bits.push(st.daysAtLevel + (st.daysAtLevel === 1 ? ' day' : ' days') + ' at this level');
-    if (prefs.ex5Mode !== 'stationary') bits.push('exercise 5 substituted');
     $('today-meta').textContent = bits.join(' · ');
+    renderSubChip();
+    renderResume();
 
     renderJourney($('today-journey'));
     renderTargets();
     renderNewLevel();
     renderLayoff();
     renderSuggestion();
+  }
+
+  /* You can leave a workout to look something up without losing it. Today then
+     has to say so loudly, because a paused run you have forgotten about is
+     worse than no run at all.                                                */
+  function renderResume() {
+    var box = $('resume-banner');
+    var btn = $('btn-start');
+    box.innerHTML = '';
+    // Preview is a pre-workout aid; mid-workout it just crowds the way back in.
+    if (!run) {
+      box.hidden = true;
+      btn.textContent = 'Start workout';
+      $('btn-preview').hidden = false;
+      return;
+    }
+    box.hidden = false;
+    btn.textContent = 'Resume workout';
+    $('btn-preview').hidden = true;
+    box.appendChild(el('h3', null, 'Workout paused'));
+    box.appendChild(el('p', null, 'Chart ' + prefs.chartId + ' · ' + prefs.level + ' — exercise ' +
+      (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].ex.name + '.'));
+    var row = el('div', 'notice__row');
+    var back = el('button', 'btn btn--primary', 'Back to the workout');
+    back.addEventListener('click', function () { go('work'); });
+    var drop = el('button', 'btn btn--ghost', 'Discard it');
+    drop.addEventListener('click', function () {
+      if (!confirm('Discard this workout? It will not be logged.')) return;
+      stopTimer();
+      run = null;
+      $('btn-pause').textContent = 'Pause';
+      renderHome();
+    });
+    row.appendChild(back); row.appendChild(drop);
+    box.appendChild(row);
+  }
+
+  /* A substitution is sticky, so Today says so plainly rather than leaving you
+     to notice that the metronome stopped showing up.                         */
+  function renderSubChip() {
+    var chip = $('today-sub');
+    chip.innerHTML = '';
+    if (prefs.ex5Mode === 'stationary') { chip.hidden = true; return; }
+    chip.hidden = false;
+    chip.appendChild(el('span', 'subchip__text', 'Exercise 5: ' + ex5Label()));
+    var undo = el('button', 'subchip__undo', 'Undo');
+    undo.addEventListener('click', function () {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+      renderHome();
+    });
+    chip.appendChild(undo);
   }
 
   /* ---------- what changed at this level ----------
@@ -531,23 +684,12 @@
       lp.appendChild(b);
     });
 
+    // A level change can invalidate the substitution (no walk above Chart 4).
     var modes = ex5Modes();
-    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) prefs.ex5Mode = 'stationary';
-    var mp = $('ex5-picker');
-    mp.innerHTML = '';
-    modes.forEach(function (m) {
-      var b = el('button', 'seg__btn', m.label);
-      b.setAttribute('aria-pressed', m.id === prefs.ex5Mode ? 'true' : 'false');
-      b.addEventListener('click', function () {
-        prefs.ex5Mode = m.id;
-        save(K_PREFS, prefs);
-        renderPicker();
-      });
-      mp.appendChild(b);
-    });
-    $('ex5-note').textContent = prefs.ex5Mode === 'stationary'
-      ? 'Every ' + c.exercises[4].jumpEvery + ' steps do ' + c.exercises[4].jumpCount + ' ' + c.exercises[4].jumpName + '.'
-      : D.substitutionNote;
+    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+    }
 
     $('picker-caution').textContent = D.rules.caution;
   }
@@ -885,6 +1027,7 @@
   }
 
   function startWorkout() {
+    if (run) { go('work'); return; }        // a paused workout is resumed, not replaced
     initAudio();
     beep(1);
     run = {
@@ -1355,7 +1498,7 @@
   function showSplash(auto) {
     if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
     $('splash-level').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
-    $('splash-hint').textContent = auto ? '' : 'tap to continue';
+    $('splash-hint').textContent = auto ? '' : 'tap to begin';
     go('splash');
     if (auto) splashTimer = setTimeout(dismissSplash, opt('splashAutoMs'));
   }
@@ -1451,6 +1594,7 @@
   /* ============================ settings ============================ */
 
   function renderSettings() {
+    renderEx5();
     $('set-voice').setAttribute('aria-checked', prefs.voiceCues ? 'true' : 'false');
     $('set-metro').setAttribute('aria-checked', prefs.metronome ? 'true' : 'false');
     $('voice-support').hidden = Voice.supported;
@@ -1524,7 +1668,7 @@
     { key: 'layoffDropDays',    label: 'Break before dropping back', unit: 'days',      min: 2,   max: 90,  step: 1 },
     { key: 'layoffRestartDays', label: 'Break before Chart 1 again', unit: 'days',      min: 7,   max: 365, step: 1 },
     { key: 'layoffDropLevels',  label: 'Levels to drop back',        unit: 'levels',    min: 1,   max: 12,  step: 1 },
-    { key: 'splashAutoMs',      label: 'Splash on launch',           unit: 'ms',        min: 0,   max: 5000, step: 100 },
+    { key: 'splashAutoMs',      label: 'Auto-dismiss start screen',  unit: 'ms, 0 waits', min: 0, max: 5000, step: 100 },
     { key: 'resumeAfterMinutes',label: 'Splash after away for',      unit: 'min',       min: 1,   max: 240, step: 1 },
     { key: 'voiceRate',         label: 'Voice speed',                unit: '\u00d7',   min: 0.6, max: 1.6, step: 0.05 }
   ];
@@ -1805,6 +1949,10 @@
     });
 
     $('sheet-resume').addEventListener('click', function () { closeSheet(true); });
+    $('sheet-home').addEventListener('click', function () {
+      closeSheet(false);                    // stays paused; the run is kept alive
+      go('home');
+    });
     $('sheet-end').addEventListener('click', function () {
       $('sheet').hidden = true;
       finishWorkout();
@@ -1895,8 +2043,10 @@
       $('boot').hidden = true;
       $('app').hidden = false;
       wire();
-      wireSplash();
-      showSplash(true);      // brief branded beat, auto-dismisses
+      wireSplash(); wireTabs();
+      // Opening the app should feel like opening an app: the start screen waits
+      // for you. splashAutoMs > 0 restores the old auto-dismissing beat.
+      showSplash(opt('splashAutoMs') > 0);
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(function () {});
