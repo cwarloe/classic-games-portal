@@ -58,6 +58,29 @@ Every rep count, step count and time was transcribed from a scan of the original
 
 **Today** is the landing screen: your current level, the journey bar, today's targets and one big Start. The chart/level grid lives behind "Change" — for a returning user the answer is almost always "the level I'm on", and putting the picker up front quietly invited level-hopping.
 
+## Settings, and what is deliberately not settable
+
+Tunable defaults live in `appDefaults` in the data file, not as constants in `app.js`. Settings writes overrides into `localStorage`; **Reset to defaults** clears those and falls back to the file. So everything adjustable is in one hand-editable place.
+
+Everyday controls sit at the top of Settings. **Advanced** (collapsed) holds: metronome cadence floor and ceiling, jump lead-in, the three layoff thresholds, splash timing, and voice speed. Values are clamped to sane ranges on entry.
+
+**Not settable, on purpose:** the 11 minute total and the 2/1/1/1/6 per-exercise allotments. They are the basis of the programme and stay fixed in `timing`.
+
+## Orientation during a workout
+
+The header reads `Chart 3 · D−` over `1 of 5`. Pause (or ✕) opens a **sheet** listing all five exercises with the current one marked "you are here", and three unambiguous exits: **Resume**, **End and save**, **Discard workout**. Previously ✕ was the only way out and meant "abandon", with nothing that let you look around without losing your place.
+
+## New level brief
+
+Moving up inside a chart only raises the counts. Moving to a **new chart** changes the movements themselves, and the app used to say nothing about it until you were mid-set.
+
+Today shows a banner when you arrive at a level you have not looked at (`prefs.levelSeen`), and the Preview screen leads with **what changed** versus the level below:
+
+- same chart — `Toe touching 3 → 4 reps`
+- new chart — `Sit-up, hands behind head — was Sit-up · 23 → 20 reps`
+
+Opening the preview acknowledges the level, so the banner appears once.
+
 ## Two clocks
 
 The booklet gives per-exercise allotments totalling 11 minutes and says **nothing at all about rest between exercises** — while explicitly allowing that the allotted times "may be varied within the total 11 minute period". A pause to get off the floor is therefore an app decision, not a violation, so long as it is accounted for honestly.

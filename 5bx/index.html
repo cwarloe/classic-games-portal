@@ -71,6 +71,7 @@
     </header>
 
     <div class="scroll">
+      <div id="newlevel" class="notice notice--new" hidden></div>
       <div id="layoff" class="notice" hidden></div>
       <div id="suggestion" class="suggestion" hidden></div>
 
@@ -152,7 +153,7 @@
   <section class="screen screen--work" id="screen-work" hidden>
     <header class="topbar topbar--work">
       <button class="icon-btn" id="btn-quit" aria-label="End workout">&times;</button>
-      <div class="work-meta"><span id="work-chart"></span></div>
+      <div class="work-meta"><span id="work-chart"></span><span class="work-meta__pos" id="work-pos"></span></div>
       <div class="elapsed" id="work-elapsed">0:00</div>
     </header>
 
@@ -182,6 +183,20 @@
         <img class="ready__fig" id="ready-fig" alt="" decoding="async" />
         <p class="ready__count" id="ready-count">5</p>
         <p class="ready__hint">tap to start now</p>
+      </div>
+    </div>
+
+    <!-- Paused: where am I, what's coming, and how do I get out. -->
+    <div class="sheet" id="sheet" hidden>
+      <div class="sheet__panel" role="dialog" aria-label="Paused">
+        <p class="sheet__kicker">Paused</p>
+        <h2 class="sheet__title" id="sheet-title">Chart 1 &middot; D-</h2>
+        <ol class="sheet__list" id="sheet-list"></ol>
+        <div class="sheet__btns">
+          <button class="btn btn--primary btn--xl" id="sheet-resume">Resume</button>
+          <button class="btn btn--ghost" id="sheet-end">End and save</button>
+          <button class="btn btn--ghost" id="sheet-discard">Discard workout</button>
+        </div>
       </div>
     </div>
 
@@ -313,6 +328,13 @@
       <div class="row-btns">
         <button class="btn btn--ghost" id="btn-replay-intro">Show the intro again</button>
       </div>
+
+      <details class="adv" id="adv">
+        <summary class="adv__summary">Advanced</summary>
+        <p class="field__hint adv__intro">Tuning you should rarely need. The 11 minutes and the 2/1/1/1/6 exercise allotments are the basis of the programme and are not adjustable.</p>
+        <div id="adv-list"></div>
+        <button class="btn btn--ghost" id="btn-reset">Reset all settings to defaults</button>
+      </details>
     </div>
   </section>
 
