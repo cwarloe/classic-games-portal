@@ -86,10 +86,12 @@
 
       <div class="journey" id="today-journey"></div>
 
+      <div class="subchip" id="today-sub" hidden></div>
+
       <div class="card">
         <h2 class="card__title">Today&rsquo;s targets</h2>
         <ol class="targets" id="targets"></ol>
-        <p class="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
+        <p class="total-line" id="total-line">5 exercises &middot; <strong>11 minutes</strong></p>
       </div>
 
       <div class="row-btns">
@@ -133,12 +135,6 @@
       <div class="field">
         <label class="field__label">Level</label>
         <div class="grid-levels" id="level-picker" role="group" aria-label="Level"></div>
-      </div>
-
-      <div class="field">
-        <label class="field__label">Exercise 5</label>
-        <div class="seg seg--stack" id="ex5-picker" role="group" aria-label="Exercise 5 mode"></div>
-        <p class="field__hint" id="ex5-note"></p>
       </div>
 
       <p class="field__hint" id="picker-caution"></p>
@@ -267,7 +263,14 @@
       <h1 class="brand">Settings</h1>
     </header>
     <div class="scroll">
-      <p class="set-intro">Coaching aids for the guided workout. Both are off by default &mdash; the workout behaves exactly as before until you turn them on.</p>
+      <div class="field field--first">
+        <label class="field__label">Exercise 5</label>
+        <div class="seg seg--stack seg--rich" id="ex5-picker" role="group" aria-label="Exercise 5"></div>
+        <p class="field__hint" id="ex5-note"></p>
+      </div>
+
+      <h2 class="set-head">Coaching aids</h2>
+      <p class="set-intro">Both are off by default &mdash; the workout behaves exactly as before until you turn them on. They apply to the stationary run only.</p>
 
       <div class="set-row">
         <div class="set-row__text">

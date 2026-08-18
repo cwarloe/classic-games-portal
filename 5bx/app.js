@@ -251,19 +251,77 @@
 
   /* ============================ home ============================ */
 
+  /* ---------- exercise 5 ----------
+     Exercise 5 is the stationary run; the booklet offers a run or a walk as
+     substitutions. Stationary is the default and stays visually primary: the
+     metronome, the step count and the jump prompts all hang off it, and the
+     walk is not offered at all above Chart 4 - that gating is the booklet's,
+     not ours.                                                                */
+
   function ex5Modes() {
     var c = chartById(prefs.chartId);
     var lv = c.levels[prefs.level];
+    var ex = c.exercises[4];
     // Charts 5 and 6 print the run target as mins:secs; the others as minutes.
     var unit = function (v) { return String(v).indexOf(':') >= 0 ? v : v + ' min'; };
-    var out = [{ id: 'stationary', label: 'Stationary run — ' + lv.steps + ' steps' }];
+    var out = [{
+      id: 'stationary', tag: 'As printed', label: 'Stationary run',
+      sub: lv.steps + ' steps · every ' + ex.jumpEvery + ', ' + ex.jumpCount + ' ' + ex.jumpName
+    }];
     if (c.alternatives.runLabel) {
-      out.push({ id: 'run', label: c.alternatives.runLabel + ' in ' + unit(lv.runDisplay) });
+      out.push({ id: 'run', tag: 'Substitution', label: c.alternatives.runLabel,
+                 sub: 'in ' + unit(lv.runDisplay) });
     }
     if (c.alternatives.walkLabel) {
-      out.push({ id: 'walk', label: c.alternatives.walkLabel + ' in ' + unit(lv.walkDisplay) });
+      out.push({ id: 'walk', tag: 'Substitution', label: c.alternatives.walkLabel,
+                 sub: 'in ' + unit(lv.walkDisplay) });
     }
     return out;
+  }
+
+  function ex5Label() {
+    var m = ex5Modes();
+    for (var i = 0; i < m.length; i++) if (m[i].id === prefs.ex5Mode) return m[i].label;
+    return 'Stationary run';
+  }
+
+  function ex5Hint() {
+    var c = chartById(prefs.chartId);
+    var bits = [D.substitutionNote];
+    if (prefs.ex5Mode !== 'stationary') {
+      bits.push('The metronome, step count and jump prompts only work for the stationary run, ' +
+                'so they stay off while exercise 5 is substituted.');
+    }
+    bits.push(c.alternatives.walkLabel
+      ? 'On Chart ' + c.id + ' the alternatives are the ' + c.alternatives.runLabel +
+        ' and the ' + c.alternatives.walkLabel + '.'
+      : 'From Chart 5 the booklet drops the walk and offers the run only.');
+    return bits.join(' ');
+  }
+
+  // Rendered into Settings; the level picker stays about the level alone.
+  function renderEx5() {
+    var modes = ex5Modes();
+    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+    }
+    var host = $('ex5-picker');
+    host.innerHTML = '';
+    modes.forEach(function (m) {
+      var b = el('button', 'seg__btn seg__btn--rich');
+      b.setAttribute('aria-pressed', m.id === prefs.ex5Mode ? 'true' : 'false');
+      b.appendChild(el('span', 'seg__tag', m.tag));
+      b.appendChild(el('span', 'seg__label', m.label));
+      b.appendChild(el('span', 'seg__sub', m.sub));
+      b.addEventListener('click', function () {
+        prefs.ex5Mode = m.id;
+        save(K_PREFS, prefs);
+        renderEx5();
+      });
+      host.appendChild(b);
+    });
+    $('ex5-note').textContent = ex5Hint();
   }
 
   function renderTargets() {
@@ -297,6 +355,22 @@
       li.appendChild(reps);
       list.appendChild(li);
     });
+
+    // A substitution has its own allotted time, so the session is no longer 11
+    // minutes and the footer must not keep claiming it is.
+    var secs = D.timing.totalSeconds;
+    if (prefs.ex5Mode === 'run') secs = firstFourSeconds() + lv.runSeconds;
+    else if (prefs.ex5Mode === 'walk') secs = firstFourSeconds() + lv.walkSeconds;
+    var line = $('total-line');
+    line.innerHTML = '';
+    line.appendChild(document.createTextNode('5 exercises · '));
+    line.appendChild(el('strong', null, secs % 60 === 0 ? (secs / 60) + ' minutes' : mmss(secs)));
+  }
+
+  function firstFourSeconds() {
+    var t = 0;
+    for (var i = 0; i < 4; i++) t += D.timing.secondsPerExercise[i];
+    return t;
   }
 
   /* ---------- the journey bar ----------
@@ -354,14 +428,31 @@
     var bits = [];
     if (st.daysAtLevel === 0) bits.push('Not started at this level');
     else bits.push(st.daysAtLevel + (st.daysAtLevel === 1 ? ' day' : ' days') + ' at this level');
-    if (prefs.ex5Mode !== 'stationary') bits.push('exercise 5 substituted');
     $('today-meta').textContent = bits.join(' · ');
+    renderSubChip();
 
     renderJourney($('today-journey'));
     renderTargets();
     renderNewLevel();
     renderLayoff();
     renderSuggestion();
+  }
+
+  /* A substitution is sticky, so Today says so plainly rather than leaving you
+     to notice that the metronome stopped showing up.                         */
+  function renderSubChip() {
+    var chip = $('today-sub');
+    chip.innerHTML = '';
+    if (prefs.ex5Mode === 'stationary') { chip.hidden = true; return; }
+    chip.hidden = false;
+    chip.appendChild(el('span', 'subchip__text', 'Exercise 5: ' + ex5Label()));
+    var undo = el('button', 'subchip__undo', 'Undo');
+    undo.addEventListener('click', function () {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+      renderHome();
+    });
+    chip.appendChild(undo);
   }
 
   /* ---------- what changed at this level ----------
@@ -531,23 +622,12 @@
       lp.appendChild(b);
     });
 
+    // A level change can invalidate the substitution (no walk above Chart 4).
     var modes = ex5Modes();
-    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) prefs.ex5Mode = 'stationary';
-    var mp = $('ex5-picker');
-    mp.innerHTML = '';
-    modes.forEach(function (m) {
-      var b = el('button', 'seg__btn', m.label);
-      b.setAttribute('aria-pressed', m.id === prefs.ex5Mode ? 'true' : 'false');
-      b.addEventListener('click', function () {
-        prefs.ex5Mode = m.id;
-        save(K_PREFS, prefs);
-        renderPicker();
-      });
-      mp.appendChild(b);
-    });
-    $('ex5-note').textContent = prefs.ex5Mode === 'stationary'
-      ? 'Every ' + c.exercises[4].jumpEvery + ' steps do ' + c.exercises[4].jumpCount + ' ' + c.exercises[4].jumpName + '.'
-      : D.substitutionNote;
+    if (!modes.some(function (m) { return m.id === prefs.ex5Mode; })) {
+      prefs.ex5Mode = 'stationary';
+      save(K_PREFS, prefs);
+    }
 
     $('picker-caution').textContent = D.rules.caution;
   }
@@ -1451,6 +1531,7 @@
   /* ============================ settings ============================ */
 
   function renderSettings() {
+    renderEx5();
     $('set-voice').setAttribute('aria-checked', prefs.voiceCues ? 'true' : 'false');
     $('set-metro').setAttribute('aria-checked', prefs.metronome ? 'true' : 'false');
     $('voice-support').hidden = Voice.supported;

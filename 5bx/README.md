@@ -81,6 +81,16 @@ Today shows a banner when you arrive at a level you have not looked at (`prefs.l
 
 Opening the preview acknowledges the level, so the banner appears once.
 
+## Exercise 5 and its substitutions
+
+Exercise 5 is the stationary run, and it stays the default — everything the app adds hangs off it: the metronome, the step count, the jump windows, the pace preview. The booklet offers two alternatives ("if you prefer, you may run or walk the recommended distance in the required time"), and the app offers them as exactly that.
+
+The choice lives in **Settings**, not on the level picker. It sat next to Chart and Level as a third field of equal weight, which read as a decision you were meant to make rather than a substitution you might occasionally want. Each option is now labelled for what it is — *As printed* versus *Substitution* — and the hint says out loud that the metronome, step count and jump prompts go quiet while a substitution is active.
+
+Which alternatives exist is the booklet's own gating, not ours: the run is ½ mile on Chart 1 and 1 mile from Chart 2 up; the walk is offered on Charts 1–4 and disappears from Chart 5. Changing to a chart that doesn't offer your substitution falls back to the stationary run.
+
+The setting is sticky, so Today carries an `Exercise 5: 1 mile run · Undo` chip whenever one is active — otherwise the only signal was a small "substituted" label and the quiet absence of the metronome. Today's footer also stops claiming 11 minutes: a substitution counts its own allotted time (Chart 1 D− with the ½ mile run is 13 minutes), which is longer than 11 by design.
+
 ## Two clocks
 
 The booklet gives per-exercise allotments totalling 11 minutes and says **nothing at all about rest between exercises** — while explicitly allowing that the allotted times "may be varied within the total 11 minute period". A pause to get off the floor is therefore an app decision, not a violation, so long as it is accounted for honestly.
@@ -169,7 +179,6 @@ Note the tension at the top: every second of jump window is taken out of the run
 
 ## Notes
 
-- Exercise 5 can be swapped for the booklet's own alternatives (½ or 1 mile run, 1 or 2 mile walk). The timer then counts the alternative's allotted time, so the session runs longer than 11 minutes by design.
 - Audio cue is a WebAudio beep; it needs the tap on "Start workout" to unlock, which is why cues are silent if you jump straight into a screen. Vibration is used where supported.
 - The screen wake lock is requested during a workout where the browser supports it.
 - History can be exported as JSON from the ⇩ button (copies to clipboard).

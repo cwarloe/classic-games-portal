@@ -517,6 +517,47 @@ textarea {
 
 /* ---------- settings ---------- */
 .set-intro { margin: 18px 0 4px; font-size: 15px; color: var(--fg-dim); }
+.set-head {
+  margin: 30px 0 0; padding-top: 22px;
+  border-top: 1px solid var(--line);
+  font-size: 18px; font-weight: 800;
+}
+.field--first { margin-top: 18px; }
+
+/* Exercise 5 options: the printed exercise reads as the default, the
+   booklet's alternatives read as what they are. */
+.seg--rich { gap: 10px; }
+.seg__btn--rich {
+  display: block; text-align: left;
+  min-height: 0; padding: 12px 14px;
+}
+.seg__tag {
+  display: block;
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--fg-dim);
+}
+.seg__label { display: block; font-size: 17px; font-weight: 700; margin-top: 2px; }
+.seg__sub { display: block; font-size: 14px; font-weight: 500; color: var(--fg-dim); margin-top: 2px; }
+.seg__btn--rich[aria-pressed="true"] .seg__tag,
+.seg__btn--rich[aria-pressed="true"] .seg__sub { color: rgba(26, 13, 6, .72); }
+
+/* Today: a substitution is sticky, so it gets a visible badge with a way out. */
+.subchip {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px; padding: 9px 10px 9px 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg-2);
+}
+.subchip[hidden] { display: none; }
+.subchip__text { flex: 1 1 auto; font-size: 14.5px; color: var(--fg-dim); }
+.subchip__undo {
+  flex: 0 0 auto;
+  min-height: 38px; padding: 0 14px;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--fg);
+  font: inherit; font-size: 14.5px; font-weight: 650; cursor: pointer;
+}
 .set-row {
   display: flex; align-items: flex-start; gap: 14px;
   padding: 18px 0;
