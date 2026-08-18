@@ -35,6 +35,14 @@
 
   /* ============================ helpers ============================ */
 
+  /* Tunable defaults live in the data file; Settings writes overrides into
+     prefs. Careful with 0 and false — only undefined/null fall through.      */
+  function opt(key) {
+    var v = prefs ? prefs[key] : undefined;
+    if (v === undefined || v === null) return (D && D.appDefaults) ? D.appDefaults[key] : undefined;
+    return v;
+  }
+
   function chartById(id) {
     for (var i = 0; i < D.charts.length; i++) if (D.charts[i].id === id) return D.charts[i];
     return D.charts[0];
@@ -190,7 +198,7 @@
         window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(text);
         if (Voice.voice) u.voice = Voice.voice;
-        u.rate = 1.05;
+        u.rate = opt('voiceRate') || 1.05;
         u.pitch = 1;
         u.onend = finish;
         u.onerror = finish;
@@ -351,8 +359,66 @@
 
     renderJourney($('today-journey'));
     renderTargets();
+    renderNewLevel();
     renderLayoff();
     renderSuggestion();
+  }
+
+  /* ---------- what changed at this level ----------
+     Moving up a level inside a chart only raises the counts. Moving to a new
+     chart changes the movements themselves — five genuinely different
+     exercises — and the app said nothing about that until you were mid-set.  */
+
+  function levelKey() { return prefs.chartId + ':' + prefs.level; }
+
+  function levelChanges() {
+    var gi = globalIndex(prefs.chartId, prefs.level);
+    if (gi <= 0) return null;                 // the very bottom, nothing before it
+    var prev = fromGlobal(gi - 1);
+    var cur = chartById(prefs.chartId), pch = chartById(prev.chartId);
+    var curLv = cur.levels[prefs.level], prevLv = pch.levels[prev.level];
+    var sameChart = prev.chartId === prefs.chartId;
+    var rows = [];
+
+    cur.exercises.forEach(function (ex, i) {
+      var was = i < 4 ? prevLv.reps[i] : prevLv.steps;
+      var now = i < 4 ? curLv.reps[i] : curLv.steps;
+      var unit = i < 4 ? 'reps' : 'steps';
+      if (!sameChart && pch.exercises[i].name !== ex.name) {
+        rows.push({ n: i + 1, movement: true, from: pch.exercises[i].name, to: ex.name,
+                    count: was + ' → ' + now + ' ' + unit });
+      } else if (was !== now) {
+        rows.push({ n: i + 1, name: ex.name, from: String(was), to: String(now), unit: unit });
+      }
+    });
+    return { sameChart: sameChart, prev: prev, rows: rows };
+  }
+
+  function renderNewLevel() {
+    var box = $('newlevel');
+    box.innerHTML = '';
+    if (prefs.levelSeen === levelKey()) { box.hidden = true; return; }
+    var ch = levelChanges();
+    if (!ch) { box.hidden = true; return; }    // nothing to announce at the very start
+
+    box.hidden = false;
+    box.appendChild(el('h3', null, ch.sameChart ? 'New level' : 'New chart'));
+    box.appendChild(el('p', null, 'Chart ' + prefs.chartId + ' · ' + prefs.level + ' — ' +
+      (ch.sameChart
+        ? 'the same five exercises, with higher counts.'
+        : 'five different exercises. Worth a look before you start.')));
+
+    var row = el('div', 'notice__row');
+    var see = el('button', 'btn btn--primary', 'See what\u2019s new');
+    see.addEventListener('click', function () { go('preview'); });
+    var ok = el('button', 'btn btn--ghost', 'Dismiss');
+    ok.addEventListener('click', function () {
+      prefs.levelSeen = levelKey();
+      save(K_PREFS, prefs);
+      renderHome();
+    });
+    row.appendChild(see); row.appendChild(ok);
+    box.appendChild(row);
   }
 
   /* ---------- preview ----------
@@ -365,6 +431,33 @@
     host.innerHTML = '';
     var c = chartById(prefs.chartId);
     var lv = c.levels[prefs.level];
+
+    var ch = levelChanges();
+    var fresh = prefs.levelSeen !== levelKey();
+    if (fresh && ch && ch.rows.length) {
+      var box = el('div', 'whatsnew');
+      box.appendChild(el('h2', null, ch.sameChart ? 'What changed' : 'A new chart — what changed'));
+      box.appendChild(el('p', 'whatsnew__sub',
+        'Compared with Chart ' + ch.prev.chartId + ' ' + ch.prev.level + '.'));
+      var ul = el('ul', 'whatsnew__list');
+      ch.rows.forEach(function (r) {
+        var li = el('li');
+        li.appendChild(el('span', 'whatsnew__n', String(r.n)));
+        var t = el('span', 'whatsnew__t');
+        if (r.movement) {
+          t.appendChild(el('b', null, r.to));
+          t.appendChild(el('span', 'whatsnew__was', 'was ' + r.from + ' · ' + r.count));
+        } else {
+          t.appendChild(el('b', null, r.name));
+          t.appendChild(el('span', 'whatsnew__was', r.from + ' → ' + r.to + ' ' + r.unit));
+        }
+        li.appendChild(t);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      host.appendChild(box);
+    }
+    if (fresh) { prefs.levelSeen = levelKey(); save(K_PREFS, prefs); }
 
     var head = el('p', 'prev-head', 'Chart ' + prefs.chartId + ' · ' + prefs.level +
       ' — five exercises in the same order, 11 minutes.');
@@ -465,10 +558,6 @@
      month if caused by illness, it is recommended that you start again at
      Chart 1." The app recommends; the user decides.                          */
 
-  var LAYOFF_RESTART_DAYS = 60;
-  var LAYOFF_DROP_DAYS = 14;
-  var LAYOFF_DROP_LEVELS = 3;
-
   function lastSessionDate() {
     var t = null;
     sessions.forEach(function (s) {
@@ -482,7 +571,7 @@
     var last = lastSessionDate();
     if (!last) return null;
     var days = Math.floor((Date.now() - last) / 86400000);
-    if (days < LAYOFF_DROP_DAYS) return null;
+    if (days < opt('layoffDropDays')) return null;
 
     var here = globalIndex(prefs.chartId, prefs.level);
     if (here === 0) return null;   // already at the very bottom
@@ -490,10 +579,10 @@
     // Don't nag once this particular layoff has been answered.
     if (prefs.layoffAck && prefs.layoffAck >= last) return null;
 
-    if (days >= LAYOFF_RESTART_DAYS) {
+    if (days >= opt('layoffRestartDays')) {
       return { days: days, to: 0, kind: 'restart' };
     }
-    return { days: days, to: Math.max(0, here - LAYOFF_DROP_LEVELS), kind: 'drop' };
+    return { days: days, to: Math.max(0, here - opt('layoffDropLevels')), kind: 'drop' };
   }
 
   function renderLayoff() {
@@ -634,9 +723,6 @@
      allotment, Chart 6 A+ needs 127. Below the jog floor we simply run at the
      floor and finish early, which is what the booklet expects at low levels.  */
 
-  var CADENCE_FLOOR = 70;    // steps/min — a natural jog, never slower
-  var CADENCE_CEIL = 200;
-
   var Metro = {
     on: false,
     phase: 'idle',          // stepping | jumping | leadin | done
@@ -656,7 +742,7 @@
       var allot = D.timing.secondsPerExercise[4];
       var stepSeconds = Math.max(30, allot - sets * windowSec);
       var needed = target / stepSeconds * 60;
-      var cadence = Math.min(CADENCE_CEIL, Math.max(CADENCE_FLOOR, needed));
+      var cadence = Math.min(opt('cadenceCeiling'), Math.max(opt('cadenceFloor'), needed));
       return {
         target: target, every: every, count: ex5.jumpCount || 10,
         name: ex5.jumpName || 'jumps', windowSec: windowSec,
@@ -753,7 +839,7 @@
     resume: function () {
       if (Metro.phase !== 'jumping') return;
       Metro.phase = 'leadin';
-      Metro.phaseEndsAt = Date.now() + 2200;
+      Metro.phaseEndsAt = Date.now() + opt('jumpLeadInMs');
       beep(1);
       Voice.say('Resume running');
       paintMetro();
@@ -852,6 +938,7 @@
     var s = run.steps[run.i];
     var ex = s.ex;
     $('work-chart').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+    $('work-pos').textContent = (run.i + 1) + ' of ' + run.steps.length;
     $('ex-num').textContent = 'Exercise ' + (run.i + 1) + ' of ' + run.steps.length;
     $('ex-name').textContent = ex.name;
     $('target-big').textContent = s.target;
@@ -933,10 +1020,7 @@
      announcement plays here, and the exercise never starts while it is still
      talking — otherwise the metronome ticks over the announcement.            */
 
-  function transitionSeconds() {
-    var v = prefs.transitionSeconds;
-    return (v === 0 || v > 0) ? v : 10;
-  }
+  function transitionSeconds() { return opt('transitionSeconds'); }
 
   function beginTransition() {
     run.trans = transitionSeconds();
@@ -984,6 +1068,49 @@
     paintClock();
   }
 
+  /* ---------- paused sheet ----------
+     The only exit used to be a bare X that meant "abandon". This gives the
+     three real answers — keep going, stop and keep it, throw it away — and
+     shows where you are in the five while you decide.                        */
+
+  function openSheet() {
+    if (!run) return;
+    run.paused = true;
+    Metro.stop();
+    Voice.stop();
+    keepAwake(false);
+    $('btn-pause').textContent = 'Resume';
+
+    $('sheet-title').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+    var list = $('sheet-list');
+    list.innerHTML = '';
+    run.steps.forEach(function (s, i) {
+      var li = el('li', 'sheet__item' + (i === run.i ? ' is-now' : (i < run.i ? ' is-done' : '')));
+      li.appendChild(el('span', 'sheet__n', String(i + 1)));
+      var t = el('span', 'sheet__name');
+      t.appendChild(document.createTextNode(s.ex.name));
+      if (i === run.i) t.appendChild(el('span', 'sheet__now', 'you are here'));
+      li.appendChild(t);
+      li.appendChild(el('span', 'sheet__target', s.target));
+      list.appendChild(li);
+    });
+    $('sheet').hidden = false;
+    paintClock();
+  }
+
+  function closeSheet(resume) {
+    $('sheet').hidden = true;
+    if (!run) return;
+    if (resume) {
+      run.paused = false;
+      run.last = Date.now();
+      $('btn-pause').textContent = 'Pause';
+      keepAwake(true);
+      if (metroApplies() && !inTransition()) Metro.start();
+    }
+    paintClock();
+  }
+
   function advance(dir, auto) {
     var next = run.i + dir;
     if (next < 0) next = 0;
@@ -1008,6 +1135,8 @@
   }
 
   function finishWorkout() {
+    $('sheet').hidden = true;
+    $('btn-pause').textContent = 'Pause';
     beep(3);
     stopTimer();
     Voice.say('Workout complete');
@@ -1220,8 +1349,6 @@
      get your bearings exactly when you are disoriented and never otherwise.
      A workout in progress is never interrupted.                              */
 
-  var SPLASH_AUTO_MS = 1500;
-  var RESUME_AFTER_MS = 20 * 60 * 1000;
   var splashTimer = null;
   var hiddenAt = null;
 
@@ -1230,7 +1357,7 @@
     $('splash-level').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
     $('splash-hint').textContent = auto ? '' : 'tap to continue';
     go('splash');
-    if (auto) splashTimer = setTimeout(dismissSplash, SPLASH_AUTO_MS);
+    if (auto) splashTimer = setTimeout(dismissSplash, opt('splashAutoMs'));
   }
 
   function dismissSplash() {
@@ -1250,7 +1377,7 @@
       var away = hiddenAt ? Date.now() - hiddenAt : 0;
       hiddenAt = null;
       if (run) return;                       // never interrupt a workout
-      if (away >= RESUME_AFTER_MS) showSplash(false);
+      if (away >= opt('resumeAfterMinutes') * 60000) showSplash(false);
     });
   }
 
@@ -1351,6 +1478,7 @@
       (chart.exercises[4].jumpWindowSeconds || 12) + 's for ' + chart.exercises[4].jumpName + '.';
 
     renderPacePreview();
+    renderAdvanced();
   }
 
   // Shows what the metronome will actually ask of you at the selected level.
@@ -1388,6 +1516,71 @@
     host.appendChild(note);
   }
 
+  // Advanced knobs, rendered from a spec so adding one is a single line.
+  var ADVANCED = [
+    { key: 'cadenceFloor',      label: 'Metronome floor',            unit: 'steps/min', min: 40,  max: 140, step: 1 },
+    { key: 'cadenceCeiling',    label: 'Metronome ceiling',          unit: 'steps/min', min: 100, max: 260, step: 1 },
+    { key: 'jumpLeadInMs',      label: 'Lead-in after a jump set',   unit: 'ms',        min: 0,   max: 6000, step: 100 },
+    { key: 'layoffDropDays',    label: 'Break before dropping back', unit: 'days',      min: 2,   max: 90,  step: 1 },
+    { key: 'layoffRestartDays', label: 'Break before Chart 1 again', unit: 'days',      min: 7,   max: 365, step: 1 },
+    { key: 'layoffDropLevels',  label: 'Levels to drop back',        unit: 'levels',    min: 1,   max: 12,  step: 1 },
+    { key: 'splashAutoMs',      label: 'Splash on launch',           unit: 'ms',        min: 0,   max: 5000, step: 100 },
+    { key: 'resumeAfterMinutes',label: 'Splash after away for',      unit: 'min',       min: 1,   max: 240, step: 1 },
+    { key: 'voiceRate',         label: 'Voice speed',                unit: '\u00d7',   min: 0.6, max: 1.6, step: 0.05 }
+  ];
+
+  function renderAdvanced() {
+    var host = $('adv-list');
+    if (host.childNodes.length) { // just refresh values
+      ADVANCED.forEach(function (a) {
+        var inp = document.getElementById('adv-' + a.key);
+        if (inp) inp.value = opt(a.key);
+      });
+      return;
+    }
+    ADVANCED.forEach(function (a) {
+      var row = el('div', 'adv__row');
+      var lab = el('label', 'adv__label');
+      lab.setAttribute('for', 'adv-' + a.key);
+      lab.appendChild(document.createTextNode(a.label));
+      lab.appendChild(el('span', 'adv__unit', a.unit));
+      row.appendChild(lab);
+
+      var inp = document.createElement('input');
+      inp.type = 'number';
+      inp.id = 'adv-' + a.key;
+      inp.className = 'adv__input';
+      inp.inputMode = 'decimal';
+      inp.min = a.min; inp.max = a.max; inp.step = a.step;
+      inp.value = opt(a.key);
+      inp.addEventListener('change', function () {
+        var v = parseFloat(inp.value);
+        if (isNaN(v)) { inp.value = opt(a.key); return; }
+        v = Math.min(a.max, Math.max(a.min, v));
+        inp.value = v;
+        prefs[a.key] = v;
+        save(K_PREFS, prefs);
+        renderSettings();
+      });
+      row.appendChild(inp);
+      host.appendChild(row);
+    });
+  }
+
+  function resetSettings() {
+    if (!confirm('Reset every setting to its default? Your level and history are kept.')) return;
+    var keep = ['chartId', 'level', 'age', 'ex5Mode', 'seenWelcome', 'layoffAck', 'levelSeen'];
+    var fresh = {};
+    keep.forEach(function (k) { if (prefs[k] !== undefined) fresh[k] = prefs[k]; });
+    fresh.voiceCues = false;
+    fresh.metronome = false;
+    fresh.jumpResume = 'auto';
+    fresh.jumpWindow = null;
+    prefs = fresh;
+    save(K_PREFS, prefs);
+    renderSettings();
+  }
+
   function wireSettings() {
     $('set-voice').addEventListener('click', function () {
       prefs.voiceCues = !prefs.voiceCues;
@@ -1411,6 +1604,8 @@
       save(K_PREFS, prefs);
       renderSettings();
     });
+
+    $('btn-reset').addEventListener('click', resetSettings);
 
     $('btn-replay-intro').addEventListener('click', function () {
       welCard = 1;
@@ -1444,6 +1639,14 @@
 
     function h(t) { body.appendChild(el('h2', 'ref-h', t)); }
     function p(t, dim) { body.appendChild(el('p', 'ref-p' + (dim ? ' ref-p--dim' : ''), t)); }
+
+    var intro = el('button', 'btn btn--ghost ref-intro', 'Replay the intro');
+    intro.addEventListener('click', function () {
+      welCard = 1;
+      $('wel-age').value = prefs.age || '';
+      go('welcome');
+    });
+    body.appendChild(intro);
 
     h('How far should you progress?');
     p(D.rules.goalGuidance);
@@ -1598,11 +1801,21 @@
 
     $('btn-pause').addEventListener('click', function () {
       if (!run) return;
-      run.paused = !run.paused;
-      run.last = Date.now();
-      $('btn-pause').textContent = run.paused ? 'Resume' : 'Pause';
-      keepAwake(!run.paused);
-      paintClock();
+      if (run.paused) closeSheet(true); else openSheet();
+    });
+
+    $('sheet-resume').addEventListener('click', function () { closeSheet(true); });
+    $('sheet-end').addEventListener('click', function () {
+      $('sheet').hidden = true;
+      finishWorkout();
+    });
+    $('sheet-discard').addEventListener('click', function () {
+      if (!confirm('Discard this workout? It will not be logged.')) return;
+      $('sheet').hidden = true;
+      stopTimer();
+      run = null;
+      $('btn-pause').textContent = 'Pause';
+      go('home');
     });
     $('btn-next').addEventListener('click', function () { if (run) advance(1, false); });
     $('btn-prev').addEventListener('click', function () { if (run) advance(-1, false); });
@@ -1618,11 +1831,7 @@
 
     $('btn-quit').addEventListener('click', function () {
       if (!run) { go('home'); return; }
-      if (!confirm('End this workout? It will not be logged.')) return;
-      stopTimer();
-      run = null;
-      $('btn-pause').textContent = 'Pause';
-      go('home');
+      openSheet();
     });
 
     $('done-picker').addEventListener('click', function (e) {
@@ -1680,7 +1889,6 @@
       if (prefs.jumpWindow === undefined) prefs.jumpWindow = null;
       if (!chartById(prefs.chartId).levels[prefs.level]) { prefs.chartId = 1; prefs.level = 'D-'; }
       if (prefs.seenWelcome === undefined) prefs.seenWelcome = false;
-      if (prefs.transitionSeconds === undefined) prefs.transitionSeconds = 10;
       save(K_PREFS, prefs);   // persist the normalised defaults
       Voice.init();
       sessions = load(K_SESSIONS, []);
