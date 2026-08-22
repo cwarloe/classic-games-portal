@@ -5,6 +5,7 @@
   var DATA_URL = 'data/5bx-charts.json';
   var K_PREFS = 'fivebx.prefs.v1';
   var K_SESSIONS = 'fivebx.sessions.v1';
+  var K_RUN = 'fivebx.run.v1';
 
   var D = null;              // chart data
   var prefs = null;          // user selections
@@ -29,8 +30,8 @@
     } catch (e) { return fallback; }
   }
   function save(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); }
-    catch (e) { /* private mode / quota — session still works in memory */ }
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch (e) { return false; }   // private mode / quota — caller decides if it matters
   }
 
   /* ============================ helpers ============================ */
@@ -238,7 +239,15 @@
      it, because they are places you finish or back out of, not places to live. */
   var TABS = ['home', 'history', 'reference', 'settings'];
 
+  /* Screens that are a root rather than a step: backing out of them leaves the
+     app, which is what a home screen should do. Everything else is pushed, so
+     Android's back button (and the browser's) backs out one screen. */
+  var ROOTS = ['splash', 'welcome', 'home'];
+  var curScreen = null;
+  var popping = false;
+
   function go(name) {
+    pushScreen(name);
     SCREENS.forEach(function (s) {
       var node = $('screen-' + s);
       if (node) node.hidden = (s !== name);
@@ -254,6 +263,31 @@
     if (name === 'preview') renderPreview();
     if (name === 'welcome') renderWelcome();
     if (name === 'home') renderHome();
+  }
+
+  function pushScreen(name) {
+    if (popping || name === curScreen) { curScreen = name; return; }
+    var root = ROOTS.indexOf(name) >= 0;
+    try {
+      history[root || curScreen === null ? 'replaceState' : 'pushState']({ s: name }, '');
+    } catch (e) { /* history unavailable — navigation still works, back doesn't */ }
+    curScreen = name;
+  }
+
+  function wireHistory() {
+    window.addEventListener('popstate', function (e) {
+      // Backing out of a live workout means "let me look", not "abandon it".
+      if (curScreen === 'work' && run) {
+        try { history.pushState({ s: 'work' }, ''); } catch (e2) {}
+        if (!run.paused) openSheet();
+        return;
+      }
+      var s = e.state && e.state.s;
+      if (SCREENS.indexOf(s) < 0) s = 'home';
+      popping = true;
+      go(s);
+      popping = false;
+    });
   }
 
   function paintTabs(name) {
@@ -483,7 +517,7 @@
     btn.textContent = 'Resume workout';
     $('btn-preview').hidden = true;
     box.appendChild(el('h3', null, 'Workout paused'));
-    box.appendChild(el('p', null, 'Chart ' + prefs.chartId + ' · ' + prefs.level + ' — exercise ' +
+    box.appendChild(el('p', null, runLabelText() + ' — exercise ' +
       (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].ex.name + '.'));
     var row = el('div', 'notice__row');
     var back = el('button', 'btn btn--primary', 'Back to the workout');
@@ -493,6 +527,7 @@
       if (!confirm('Discard this workout? It will not be logged.')) return;
       stopTimer();
       run = null;
+      clearRun();
       $('btn-pause').textContent = 'Pause';
       renderHome();
     });
@@ -828,18 +863,21 @@
 
   /* ============================ workout ============================ */
 
-  function buildSteps() {
-    var c = chartById(prefs.chartId);
-    var lv = c.levels[prefs.level];
+  /* A workout belongs to the level it was built for, not to whatever prefs say
+     later. You can leave a run paused and change level on Today, so every read
+     during a workout goes through run.*, never prefs.*.                       */
+  function buildSteps(chartId, level, ex5Mode) {
+    var c = chartById(chartId);
+    var lv = c.levels[level];
     return c.exercises.map(function (ex, i) {
       var seconds = D.timing.secondsPerExercise[i];
       var target;
       if (i < 4) {
         target = lv.reps[i] + ' reps';
-      } else if (prefs.ex5Mode === 'run') {
+      } else if (ex5Mode === 'run') {
         seconds = lv.runSeconds;
         target = c.alternatives.runLabel;
-      } else if (prefs.ex5Mode === 'walk') {
+      } else if (ex5Mode === 'walk') {
         seconds = lv.walkSeconds;
         target = c.alternatives.walkLabel;
       } else {
@@ -848,6 +886,8 @@
       return { ex: ex, seconds: seconds, target: target, index: i };
     });
   }
+
+  function runLabelText() { return 'Chart ' + run.chartId + ' · ' + run.level; }
 
   /* ======================= exercise 5 metronome =======================
 
@@ -893,8 +933,8 @@
     },
 
     start: function () {
-      var chart = chartById(prefs.chartId);
-      var p = Metro.plan(chart, prefs.level);
+      var chart = chartById(run.chartId);
+      var p = Metro.plan(chart, run.level);
       Metro.on = true;
       Metro.phase = 'stepping';
       Metro.steps = 0;
@@ -1023,7 +1063,58 @@
     return prefs.metronome &&
            run && run.steps[run.i] &&
            run.steps[run.i].index === 4 &&
-           prefs.ex5Mode === 'stationary';
+           run.ex5Mode === 'stationary';
+  }
+
+  /* ---------- surviving a reload ----------
+     run lives in memory, and the paused banner invites you to come back later -
+     but a refresh, a crash or the OS evicting a backgrounded PWA used to drop
+     the workout without a trace. Snapshot enough to rebuild it; the steps come
+     back from the stamped level, so nothing about the plan is duplicated.     */
+
+  var RUN_MAX_AGE_MS = 12 * 60 * 60 * 1000;   // older than this, it isn't today's
+
+  function saveRun() {
+    if (!run) { try { localStorage.removeItem(K_RUN); } catch (e) {} return; }
+    save(K_RUN, {
+      chartId: run.chartId, level: run.level, ex5Mode: run.ex5Mode,
+      i: run.i, remaining: run.remaining, trans: run.trans,
+      exElapsed: run.exElapsed, totalElapsed: run.totalElapsed,
+      startedAt: run.startedAt, skipped: run.skipped, savedAt: Date.now()
+    });
+  }
+
+  function clearRun() {
+    try { localStorage.removeItem(K_RUN); } catch (e) {}
+  }
+
+  function restoreRun() {
+    var r = load(K_RUN, null);
+    if (!r || typeof r !== 'object') return false;
+    if (!r.savedAt || Date.now() - r.savedAt > RUN_MAX_AGE_MS) { clearRun(); return false; }
+    var c = chartById(r.chartId);
+    if (!c || !c.levels[r.level]) { clearRun(); return false; }   // data edited underneath it
+
+    run = {
+      chartId: r.chartId, level: r.level, ex5Mode: r.ex5Mode,
+      steps: buildSteps(r.chartId, r.level, r.ex5Mode),
+      i: Math.min(Math.max(0, r.i | 0), 4),
+      remaining: r.remaining,
+      paused: true,                    // always comes back paused, never running
+      last: Date.now(),
+      startedAt: r.startedAt || Date.now(),
+      exElapsed: r.exElapsed || 0,
+      totalElapsed: r.totalElapsed || 0,
+      trans: r.trans || 0,
+      voicePending: false,
+      skipped: !!r.skipped,
+      tick: null
+    };
+    buildPips();
+    paintStep();
+    $('btn-pause').textContent = 'Resume';
+    run.tick = setInterval(tick, 200);   // harmless while paused; tick() returns early
+    return true;
   }
 
   function startWorkout() {
@@ -1031,7 +1122,10 @@
     initAudio();
     beep(1);
     run = {
-      steps: buildSteps(),
+      chartId: prefs.chartId,          // the workout's own level, frozen here
+      level: prefs.level,
+      ex5Mode: prefs.ex5Mode,
+      steps: buildSteps(prefs.chartId, prefs.level, prefs.ex5Mode),
       i: 0,
       remaining: 0,
       paused: false,
@@ -1051,6 +1145,7 @@
     paintStep();
     go('work');
     beginTransition();
+    saveRun();
     run.tick = setInterval(tick, 200);
   }
 
@@ -1080,7 +1175,7 @@
   function paintStep() {
     var s = run.steps[run.i];
     var ex = s.ex;
-    $('work-chart').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+    $('work-chart').textContent = runLabelText();
     $('work-pos').textContent = (run.i + 1) + ' of ' + run.steps.length;
     $('ex-num').textContent = 'Exercise ' + (run.i + 1) + ' of ' + run.steps.length;
     $('ex-name').textContent = ex.name;
@@ -1094,7 +1189,7 @@
 
     // The original booklet's illustration for this exercise, as a reminder.
     var img = $('fig-img');
-    img.src = 'figures/c' + prefs.chartId + 'e' + (run.i + 1) + '.png';
+    img.src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
     img.alt = 'Illustration: ' + ex.name;
     $('fig').hidden = false;
     img.onerror = function () { $('fig').hidden = true; };
@@ -1140,6 +1235,7 @@
 
     run.remaining -= dt;
     run.exElapsed += dt;         // only counts while an exercise is running
+    if (run.exElapsed - (run.savedAtEx || 0) >= 5) { run.savedAtEx = run.exElapsed; saveRun(); }
 
     if (run.remaining <= 0) {
       if (run.i >= run.steps.length - 1) { finishWorkout(); return; }
@@ -1188,7 +1284,7 @@
     var left = Math.max(0, Math.ceil(run.trans));
     $('ready-count').textContent = left > 0 ? String(left) : '·';
     var img = $('ready-fig');
-    var src = 'figures/c' + prefs.chartId + 'e' + (run.i + 1) + '.png';
+    var src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
     if (img.getAttribute('src') !== src) {
       img.hidden = false;
       img.src = src;
@@ -1224,7 +1320,7 @@
     keepAwake(false);
     $('btn-pause').textContent = 'Resume';
 
-    $('sheet-title').textContent = 'Chart ' + prefs.chartId + ' · ' + prefs.level;
+    $('sheet-title').textContent = runLabelText();
     var list = $('sheet-list');
     list.innerHTML = '';
     run.steps.forEach(function (s, i) {
@@ -1244,6 +1340,7 @@
   function closeSheet(resume) {
     $('sheet').hidden = true;
     if (!run) return;
+    saveRun();
     if (resume) {
       run.paused = false;
       run.last = Date.now();
@@ -1260,7 +1357,9 @@
     if (next > run.steps.length - 1) { finishWorkout(); return; }
 
     // Skipping an exercise with time left means we can't vouch for the reps.
-    if (!auto && dir > 0 && run.remaining > 2 && !inTransition()) run.skipped = true;
+    // This used to exclude transitions, but pressing Next during the break
+    // skips the whole upcoming exercise - the most complete skip there is.
+    if (!auto && dir > 0 && (inTransition() || run.remaining > 2)) run.skipped = true;
 
     Metro.stop();
     run.i = next;
@@ -1268,6 +1367,7 @@
     run.last = Date.now();
     paintStep();
     beginTransition();
+    saveRun();
   }
 
   function stopTimer() {
@@ -1291,9 +1391,9 @@
     pending = {
       id: String(Date.now()),
       date: new Date().toISOString(),
-      chartId: prefs.chartId,
-      level: prefs.level,
-      ex5Mode: prefs.ex5Mode,
+      chartId: run.chartId,
+      level: run.level,
+      ex5Mode: run.ex5Mode,
       durationSeconds: exSec,           // exercise time — what the rule counts
       totalSeconds: totalSec,           // wall clock including transitions
       completedInTime: null,
@@ -1302,7 +1402,7 @@
 
     var sum = $('done-summary');
     sum.innerHTML = '';
-    sum.appendChild(el('div', 'big', 'Chart ' + prefs.chartId + ' · ' + prefs.level));
+    sum.appendChild(el('div', 'big', runLabelText()));
 
     var rows = el('div', 'done-rows');
     function row(k, v, strong) {
@@ -1313,20 +1413,29 @@
     }
     row('Exercise time', mmss(exSec), true);
     if (totalSec > exSec + 1) row('Including breaks', mmss(totalSec));
-    if (prefs.ex5Mode !== 'stationary') row('Exercise 5', 'substituted');
+    if (run.ex5Mode !== 'stationary') row('Exercise 5', 'substituted');
     sum.appendChild(rows);
 
     var inTime = exSec <= planned + 2;
-    sum.appendChild(el('div', 'sub', inTime
-      ? 'That is inside the 11 minute allotment.'
-      : 'That is over the 11 minute allotment.'));
+    // A session far under the allotment did not happen: exercises 1-4 alone run
+    // 5 minutes unless they were cut short, so anything near zero is a walkout,
+    // not a fast workout. Never present that as time inside the allotment.
+    var tooShort = exSec < planned / 2;
+    sum.appendChild(el('div', 'sub', tooShort
+      ? 'That is far short of a full session.'
+      : (inTime ? 'That is inside the 11 minute allotment.'
+                : 'That is over the 11 minute allotment.')));
 
     $('notes').value = '';
     // Pre-fill from the measurement, but only when we can vouch for it: no
     // exercise was cut short, so the reps had their full allotted time.
-    setDonePick(skipped ? null : (inTime ? 'yes' : 'no'));
-    if (skipped) {
-      sum.appendChild(el('div', 'sub', 'You skipped ahead, so answer below yourself.'));
+    var vouchable = !skipped && !tooShort;
+    setDonePick(vouchable ? (inTime ? 'yes' : 'no') : null);
+    clearRun();
+    if (!vouchable) {
+      sum.appendChild(el('div', 'sub', skipped
+        ? 'You skipped ahead, so answer below yourself.'
+        : 'Too little of the session was timed to answer this for you.'));
     }
     run = null;
     go('done');
@@ -1962,6 +2071,7 @@
       $('sheet').hidden = true;
       stopTimer();
       run = null;
+      clearRun();
       $('btn-pause').textContent = 'Pause';
       go('home');
     });
@@ -1995,7 +2105,14 @@
       }
       pending.notes = $('notes').value.trim();
       sessions.push(pending);
-      save(K_SESSIONS, sessions);
+      // Storage can be full or blocked (private browsing). Losing a workout
+      // silently is worse than an ugly alert.
+      if (!save(K_SESSIONS, sessions)) {
+        sessions.pop();
+        alert('This device would not let the app save (storage is full, or private browsing is on). ' +
+              'The workout has NOT been logged.');
+        return;
+      }
       pending = null;
       $('btn-pause').textContent = 'Pause';
       go('home');
@@ -2040,10 +2157,11 @@
       save(K_PREFS, prefs);   // persist the normalised defaults
       Voice.init();
       sessions = load(K_SESSIONS, []);
+      restoreRun();          // a workout left running comes back paused
       $('boot').hidden = true;
       $('app').hidden = false;
       wire();
-      wireSplash(); wireTabs();
+      wireSplash(); wireTabs(); wireHistory();
       // Opening the app should feel like opening an app: the start screen waits
       // for you. splashAutoMs > 0 restores the old auto-dismissing beat.
       showSplash(opt('splashAutoMs') > 0);
