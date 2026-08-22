@@ -520,6 +520,7 @@ function updateUI() {
 function gameLoop() {
     update();
     draw();
+    window.frameCount = (window.frameCount || 0) + 1;
     requestAnimationFrame(gameLoop);
 }
 

@@ -564,9 +564,12 @@ class Battlezone {
             } else if (obj.type === 'enemy') {
                 this.renderEnemy(ctx, screenX, groundY, scale, obj.data, obj.x, obj.z);
             } else if (obj.type === 'bullet') {
-                this.renderBullet(ctx, screenX, groundY, scale);
+                // Project at cannon height (1.5 units above ground) so bullets are visible
+                const bulletY = horizonY + ((camH - 1.5) / obj.z) * fov;
+                this.renderBullet(ctx, screenX, bulletY, scale);
             } else if (obj.type === 'enemyBullet') {
-                this.renderEnemyBullet(ctx, screenX, groundY, scale);
+                const bulletY = horizonY + ((camH - 1.5) / obj.z) * fov;
+                this.renderEnemyBullet(ctx, screenX, bulletY, scale);
             }
         });
     }
@@ -786,11 +789,12 @@ class Battlezone {
         this.update(deltaTime);
         this.render();
 
+        window.frameCount = (window.frameCount || 0) + 1;
         requestAnimationFrame(() => this.gameLoop());
     }
 }
 
 // Start game when page loads
 window.addEventListener('load', () => {
-    new Battlezone();
+    window.game = new Battlezone();
 });
