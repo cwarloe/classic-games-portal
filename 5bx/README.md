@@ -68,6 +68,16 @@ The pause sheet's fourth option is **Home — keep this workout**. It pauses the
 
 Previously the only exits from a workout were Resume, End and save, and Discard — there was no way to go look something up in the Reference and come back.
 
+A paused workout also survives a reload. `fivebx.run.v1` holds a snapshot — position, both clocks, the skip flag and the workout's own level — written when you pause, change exercise, or every five seconds of exercise time. On boot it comes back **paused**, never running, and a snapshot older than 12 hours is discarded rather than offered as today's workout. Phones evict backgrounded PWAs routinely, so without this the banner was promising something it couldn't keep.
+
+### The back button
+
+Screens other than the roots (splash, welcome, Today) are pushed onto `history`, so Android's back button and the browser's back button back out one screen instead of leaving the app. Backing out of a live workout opens the pause sheet rather than abandoning the run.
+
+### A workout belongs to its own level
+
+`run` is stamped with `chartId`, `level` and `ex5Mode` when it is built, and every read during a workout goes through `run.*` rather than `prefs.*`. Because you can now leave a run paused and change level on Today, reading the *current* selection at the finish meant a Chart 1 D− workout could be logged as Chart 4 A — corrupting history and the progression rule with it.
+
 ## Settings, and what is deliberately not settable
 
 Tunable defaults live in `appDefaults` in the data file, not as constants in `app.js`. Settings writes overrides into `localStorage`; **Reset to defaults** clears those and falls back to the file. So everything adjustable is in one hand-editable place.
@@ -112,7 +122,12 @@ Break time sits **outside** the 11 minutes. Two clocks are tracked:
 
 Both are stored on every session (`durationSeconds` and `totalSeconds`). The finish screen shows exercise time prominently and total time beneath it.
 
-Because exercise time is now measured rather than guessed, the finish screen **pre-fills** the "completed within 11 minutes" answer — but only when no exercise was cut short. Skipping ahead sets `run.skipped`, which leaves the answer blank and says so, because the app cannot vouch for reps that never got their allotted time.
+Because exercise time is now measured rather than guessed, the finish screen **pre-fills** the "completed within 11 minutes" answer — but only when it can vouch for it. Two guards, because this is the one rule the plan actually turns on:
+
+- **Skipping ahead sets `run.skipped`**, which leaves the answer blank and says so. This includes pressing Next *during a break* — which skips the whole upcoming exercise, and used not to count.
+- **A session under half the allotment is never vouched for.** Exercises 1–4 alone run five minutes unless they were cut short, so anything near zero is a walkout, not a fast workout. It reads "far short of a full session" rather than "inside the 11 minute allotment".
+
+Without both, tapping Next through a workout in three seconds logged `durationSeconds: 0, completedInTime: true` and Today immediately offered the next level.
 
 ## Voice and the metronome
 
@@ -192,4 +207,6 @@ Note the tension at the top: every second of jump window is taken out of the run
 - Audio cue is a WebAudio beep; it needs the tap on "Start workout" to unlock, which is why cues are silent if you jump straight into a screen. Vibration is used where supported.
 - The screen wake lock is requested during a workout where the browser supports it.
 - History can be exported as JSON from the ⇩ button (copies to clipboard).
+- Saving is best-effort but never silent: if `localStorage` refuses (quota, private browsing) the finish screen says the workout was **not** logged rather than returning to Today as though it had been.
+- Storage keys: `fivebx.prefs.v1`, `fivebx.sessions.v1`, `fivebx.run.v1` (the in-flight workout).
 - Not medical advice.
