@@ -90,6 +90,21 @@ Everyday controls sit at the top of Settings. **Advanced** (collapsed) holds: me
 
 The header reads `Chart 3 · D−` over `1 of 5`. Pause (or ✕) opens a **sheet** listing all five exercises with the current one marked "you are here", and three unambiguous exits: **Resume**, **End and save**, **Discard workout**. Previously ✕ was the only way out and meant "abandon", with nothing that let you look around without losing your place.
 
+## One notice at a time
+
+Today can raise four things — a paused workout, a layoff, a new level, a progression suggestion — and each used to fire independently. Together they buried the screen: a new level plus a layoff alone pushed the level heading to the bottom of the viewport. Two of them also contradicted each other outright, telling you to drop back after a break and to move up in the same breath.
+
+`renderNotices()` runs them in priority order and stops at the first that fires:
+
+| | Why it ranks there |
+|---|---|
+| Paused workout | The only one you can act on this second |
+| Layoff | A break changes which level today should even be |
+| New level | You have arrived somewhere you have not looked at |
+| Progression suggestion | Where you could go next — least urgent |
+
+Every dismissal re-runs `renderHome()`, so dealing with one surfaces the next rather than hiding it for good. The Start button still becomes **Resume workout** even when the resume banner itself is outranked — the dock is not a notice.
+
 ## New level brief
 
 Moving up inside a chart only raises the counts. Moving to a **new chart** changes the movements themselves, and the app used to say nothing about it until you were mid-set.
