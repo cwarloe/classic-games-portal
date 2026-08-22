@@ -490,19 +490,34 @@
     else bits.push(st.daysAtLevel + (st.daysAtLevel === 1 ? ' day' : ' days') + ' at this level');
     $('today-meta').textContent = bits.join(' · ');
     renderSubChip();
-    renderResume();
-
     renderJourney($('today-journey'));
     renderTargets();
-    renderNewLevel();
-    renderLayoff();
-    renderSuggestion();
+    renderNotices();
+  }
+
+  /* ---------- one notice at a time ----------
+     Each of these fires independently, and together they buried Today: a new
+     level plus a layoff already pushed the level heading to the bottom of the
+     viewport, and a paused workout and a progression suggestion can join them.
+     They are also not equally urgent, and one pairing outright contradicts
+     itself - being told to drop back after a break while also being told to
+     move up. Highest priority wins and the rest stay hidden; every dismissal
+     re-runs renderHome, so the next one surfaces on its own.                 */
+  function renderNotices() {
+    var shown = false;
+    [renderResume,        // an unfinished workout - the only one actionable now
+     renderLayoff,        // a break changes which level today should be
+     renderNewLevel,      // you have arrived somewhere you have not looked at
+     renderSuggestion     // where you could go next; least urgent
+    ].forEach(function (fn) {
+      if (fn(shown)) shown = true;
+    });
   }
 
   /* You can leave a workout to look something up without losing it. Today then
      has to say so loudly, because a paused run you have forgotten about is
      worse than no run at all.                                                */
-  function renderResume() {
+  function renderResume(suppressed) {
     var box = $('resume-banner');
     var btn = $('btn-start');
     box.innerHTML = '';
@@ -511,11 +526,14 @@
       box.hidden = true;
       btn.textContent = 'Start workout';
       $('btn-preview').hidden = false;
-      return;
+      return false;
     }
-    box.hidden = false;
+    // The dock has to say Resume even when something outranked the banner,
+    // so the button is set before the suppression check, not after.
     btn.textContent = 'Resume workout';
     $('btn-preview').hidden = true;
+    if (suppressed) { box.hidden = true; return false; }
+    box.hidden = false;
     box.appendChild(el('h3', null, 'Workout paused'));
     box.appendChild(el('p', null, runLabelText() + ' — exercise ' +
       (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].ex.name + '.'));
@@ -533,6 +551,7 @@
     });
     row.appendChild(back); row.appendChild(drop);
     box.appendChild(row);
+    return true;
   }
 
   /* A substitution is sticky, so Today says so plainly rather than leaving you
@@ -582,12 +601,12 @@
     return { sameChart: sameChart, prev: prev, rows: rows };
   }
 
-  function renderNewLevel() {
+  function renderNewLevel(suppressed) {
     var box = $('newlevel');
     box.innerHTML = '';
-    if (prefs.levelSeen === levelKey()) { box.hidden = true; return; }
+    if (prefs.levelSeen === levelKey() || suppressed) { box.hidden = true; return false; }
     var ch = levelChanges();
-    if (!ch) { box.hidden = true; return; }    // nothing to announce at the very start
+    if (!ch) { box.hidden = true; return false; }    // nothing to announce at the very start
 
     box.hidden = false;
     box.appendChild(el('h3', null, ch.sameChart ? 'New level' : 'New chart'));
@@ -607,6 +626,7 @@
     });
     row.appendChild(see); row.appendChild(ok);
     box.appendChild(row);
+    return true;
   }
 
   /* ---------- preview ----------
@@ -762,11 +782,11 @@
     return { days: days, to: Math.max(0, here - opt('layoffDropLevels')), kind: 'drop' };
   }
 
-  function renderLayoff() {
+  function renderLayoff(suppressed) {
     var box = $('layoff');
     box.innerHTML = '';
     var st = layoffState();
-    if (!st) { box.hidden = true; return; }
+    if (!st || suppressed) { box.hidden = true; return false; }
     box.hidden = false;
 
     var target = fromGlobal(st.to);
@@ -797,6 +817,7 @@
     row.appendChild(accept);
     row.appendChild(keep);
     box.appendChild(row);
+    return true;
   }
 
   /* ---------- progression logic ----------
@@ -826,12 +847,12 @@
     };
   }
 
-  function renderSuggestion() {
+  function renderSuggestion(suppressed) {
     var box = $('suggestion');
     var st = progressState();
     box.innerHTML = '';
 
-    if (!st.hasCompleted || st.atTop) { box.hidden = true; return; }
+    if (!st.hasCompleted || st.atTop || suppressed) { box.hidden = true; return false; }
 
     if (st.daysShort > 0) {
       box.hidden = false;
@@ -840,7 +861,7 @@
         'You completed ' + prefs.level + ' within 11 minutes. At your age the plan asks for at least ' +
         st.minDays + ' days at each level — ' + st.daysShort + ' more ' +
         (st.daysShort === 1 ? 'day' : 'days') + ' to go.'));
-      return;
+      return true;
     }
 
     var nxt = fromGlobal(st.gi + 1);
@@ -859,6 +880,7 @@
       renderHome();
     });
     box.appendChild(b);
+    return true;
   }
 
   /* ============================ workout ============================ */
