@@ -893,19 +893,24 @@
     var lv = c.levels[level];
     return c.exercises.map(function (ex, i) {
       var seconds = D.timing.secondsPerExercise[i];
-      var target;
+      var target, count = null, unit;
+      // count/unit are the same target split up, so the workout screen can make
+      // the number itself the largest thing on it. A run or walk substitution
+      // has no count - the label is the whole target.
       if (i < 4) {
+        count = String(lv.reps[i]); unit = 'reps';
         target = lv.reps[i] + ' reps';
       } else if (ex5Mode === 'run') {
         seconds = lv.runSeconds;
-        target = c.alternatives.runLabel;
+        target = unit = c.alternatives.runLabel;
       } else if (ex5Mode === 'walk') {
         seconds = lv.walkSeconds;
-        target = c.alternatives.walkLabel;
+        target = unit = c.alternatives.walkLabel;
       } else {
+        count = String(lv.steps); unit = 'steps';
         target = lv.steps + ' steps';
       }
-      return { ex: ex, seconds: seconds, target: target, index: i };
+      return { ex: ex, seconds: seconds, target: target, count: count, unit: unit, index: i };
     });
   }
 
@@ -1201,7 +1206,12 @@
     $('work-pos').textContent = (run.i + 1) + ' of ' + run.steps.length;
     $('ex-num').textContent = 'Exercise ' + (run.i + 1) + ' of ' + run.steps.length;
     $('ex-name').textContent = ex.name;
-    $('target-big').textContent = s.target;
+
+    var t = $('target-big');
+    t.innerHTML = '';
+    t.classList.toggle('target-big--label', !s.count);
+    if (s.count) t.appendChild(el('span', 'target-big__n', s.count));
+    t.appendChild(el('span', 'target-big__u', s.unit));
 
     var box = $('instructions');
     box.innerHTML = '';

@@ -126,6 +126,14 @@ Which alternatives exist is the booklet's own gating, not ours: the run is ½ mi
 
 The setting is sticky, so Today carries an `Exercise 5: 1 mile run · Undo` chip whenever one is active — otherwise the only signal was a small "substituted" label and the quiet absence of the metronome. Today's footer also stops claiming 11 minutes: a substitution counts its own allotted time (Chart 1 D− with the ½ mile run is 13 minutes), which is longer than 11 by design.
 
+## The workout screen
+
+The rep count is the largest thing on the screen. It used to be a 17px pill under the exercise name while the clock ran at 132px — exactly backwards for the moment it matters, when you are mid-movement and glancing up to remember whether it is 20 or 12.
+
+`buildSteps()` therefore splits the target into `count` and `unit`, so the number can be sized on its own: the count at `clamp(64px, 22vw, 108px)` in the accent colour, the unit beside it at a quarter of that. The pill is gone — at this size a border around the number is just noise. The clock moved to `clamp(52px, 18vw, 96px)`: still the second-largest thing, no longer competing.
+
+A run or walk substitution has no count, so the label *is* the target and renders at `clamp(30px, 9vw, 46px)` instead. Exercise name, target and clock all stay above the fold on a 375×667 screen, including on the longest exercise.
+
 ## Two clocks
 
 The booklet gives per-exercise allotments totalling 11 minutes and says **nothing at all about rest between exercises** — while explicitly allowing that the allotted times "may be varied within the total 11 minute period". A pause to get off the floor is therefore an app decision, not a violation, so long as it is accounted for honestly.
