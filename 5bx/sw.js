@@ -1,6 +1,6 @@
 /* 5BX service worker — offline-first for a fixed, tiny asset set. */
 
-var CACHE = '5bx-v14';
+var CACHE = '5bx-v15';
 var ASSETS = [
   './',
   './index.html',

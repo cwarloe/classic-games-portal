@@ -2221,6 +2221,28 @@
     });
   }
 
+  /* ---------- picking up a new version ----------
+     sw.js calls skipWaiting() and clients.claim(), so a new deploy activates
+     as soon as it downloads - but the page you are looking at has already run
+     the old app.js, so the update only showed on the launch after next. This
+     reloads once when the new worker takes over, making a single relaunch
+     enough.
+
+     Three things it must not do: reload on the very first install (there was
+     no previous version to replace), reload more than once, or reload out from
+     under a workout. A deferred update is not lost - the new worker is already
+     in control, so the next launch runs the new code with no reload at all.  */
+  function wireUpdates() {
+    var had = !!navigator.serviceWorker.controller;   // false on a first install
+    var done = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!had || done) return;
+      if (run || pending) return;                    // never mid-workout or mid-save
+      done = true;
+      location.reload();
+    });
+  }
+
   /* ============================ boot ============================ */
 
   fetch(DATA_URL)
@@ -2252,6 +2274,7 @@
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(function () {});
+        wireUpdates();
       }
     })
     .catch(function (err) {
