@@ -134,6 +134,18 @@ The rep count is the largest thing on the screen. It used to be a 17px pill unde
 
 A run or walk substitution has no count, so the label *is* the target and renders at `clamp(30px, 9vw, 46px)` instead. Exercise name, target and clock all stay above the fold on a 375×667 screen, including on the longest exercise.
 
+### When exercise 5 is substituted
+
+The alternatives replace the movement itself, so the stationary run's name, instructions and illustration are all wrong once one is chosen. The screen used to tell you to count steps and do scissor jumps every 75 while the target said "1 mile run".
+
+`ex5Substitution()` resolves it in one place and `buildSteps()` hangs the result on the step, so the workout screen, the get-ready break, the pause sheet, the paused banner, the spoken announcement and the Preview all agree:
+
+- **name** — *Distance run* / *Distance walk*, not *Stationary run*
+- **instructions** — the distance and its allotted time, then the booklet's substitution note verbatim, then two notes on what the app is doing differently (the session runs past 11 minutes by design; step counting, metronome and jump prompts stay off)
+- **illustration** — none. The booklet has no figure for a road run, and the stationary run's would be a lie.
+
+The booklet gives no form instructions for the run or the walk, only a distance and a time, so neither does the app.
+
 ## Two clocks
 
 The booklet gives per-exercise allotments totalling 11 minutes and says **nothing at all about rest between exercises** — while explicitly allowing that the allotted times "may be varied within the total 11 minute period". A pause to get off the floor is therefore an app decision, not a violation, so long as it is accounted for honestly.

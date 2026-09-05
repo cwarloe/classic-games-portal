@@ -536,7 +536,7 @@
     box.hidden = false;
     box.appendChild(el('h3', null, 'Workout paused'));
     box.appendChild(el('p', null, runLabelText() + ' — exercise ' +
-      (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].ex.name + '.'));
+      (run.i + 1) + ' of ' + run.steps.length + ', ' + run.steps[run.i].name + '.'));
     var row = el('div', 'notice__row');
     var back = el('button', 'btn btn--primary', 'Back to the workout');
     back.addEventListener('click', function () { go('work'); });
@@ -637,8 +637,6 @@
   function renderPreview() {
     var host = $('preview-body');
     host.innerHTML = '';
-    var c = chartById(prefs.chartId);
-    var lv = c.levels[prefs.level];
 
     var ch = levelChanges();
     var fresh = prefs.levelSeen !== levelKey();
@@ -671,37 +669,41 @@
       ' — five exercises in the same order, 11 minutes.');
     host.appendChild(head);
 
-    c.exercises.forEach(function (ex, i) {
+    var steps = buildSteps(prefs.chartId, prefs.level, prefs.ex5Mode);
+    steps.forEach(function (s, i) {
+      var ex = s.ex;
       var card = el('div', 'prev');
 
       var top = el('div', 'prev__top');
       top.appendChild(el('span', 'prev__n', String(i + 1)));
       var t = el('div', 'prev__t');
-      t.appendChild(el('h2', null, ex.name));
-      t.appendChild(el('p', null, mmss(D.timing.secondsPerExercise[i]) + ' allotted'));
+      t.appendChild(el('h2', null, s.name));
+      t.appendChild(el('p', null, mmss(s.seconds) + ' allotted'));
       top.appendChild(t);
-
-      var target;
-      if (i < 4) target = lv.reps[i] + ' reps';
-      else if (prefs.ex5Mode === 'run') target = c.alternatives.runLabel;
-      else if (prefs.ex5Mode === 'walk') target = c.alternatives.walkLabel;
-      else target = lv.steps + ' steps';
-      top.appendChild(el('span', 'prev__target', target));
+      top.appendChild(el('span', 'prev__target', s.target));
       card.appendChild(top);
 
-      var img = document.createElement('img');
-      img.className = 'prev__fig';
-      img.src = 'figures/c' + prefs.chartId + 'e' + (i + 1) + '.png';
-      img.alt = 'Illustration: ' + ex.name;
-      img.loading = 'lazy';
-      img.onerror = function () { img.remove(); };
-      card.appendChild(img);
+      if (s.figure) {
+        var img = document.createElement('img');
+        img.className = 'prev__fig';
+        img.src = 'figures/c' + prefs.chartId + 'e' + (i + 1) + '.png';
+        img.alt = 'Illustration: ' + s.name;
+        img.loading = 'lazy';
+        img.onerror = function () { img.remove(); };
+        card.appendChild(img);
+      }
 
-      card.appendChild(el('p', 'prev__lead', ex.start));
-      card.appendChild(el('p', 'prev__move', ex.movement));
-      (ex.notes || []).forEach(function (n) {
-        card.appendChild(el('p', 'prev__note', n));
-      });
+      if (s.body) {
+        s.body.forEach(function (b) {
+          card.appendChild(el('p', b.cls === 'lead' ? 'prev__lead' : 'prev__note', b.text));
+        });
+      } else {
+        card.appendChild(el('p', 'prev__lead', ex.start));
+        card.appendChild(el('p', 'prev__move', ex.movement));
+        (ex.notes || []).forEach(function (n) {
+          card.appendChild(el('p', 'prev__note', n));
+        });
+      }
 
       host.appendChild(card);
     });
@@ -885,6 +887,36 @@
 
   /* ============================ workout ============================ */
 
+  /* ---------- substituted exercise 5 ----------
+     The booklet's alternatives replace the movement itself, so the stationary
+     run's name, instructions and illustration are all wrong once one is
+     chosen - the screen used to tell you to count steps and do scissor jumps
+     while the target said "1 mile run". The booklet gives no form instructions
+     for the run or the walk, only the distance and the time, so neither does
+     this: the body is the booklet's own substitution note verbatim plus what
+     the app itself is doing differently.                                     */
+  function ex5Substitution(chartId, level, ex5Mode) {
+    if (ex5Mode !== 'run' && ex5Mode !== 'walk') return null;
+    var c = chartById(chartId);
+    var lv = c.levels[level];
+    var label = ex5Mode === 'run' ? c.alternatives.runLabel : c.alternatives.walkLabel;
+    if (!label) return null;
+    var disp = ex5Mode === 'run' ? lv.runDisplay : lv.walkDisplay;
+    var time = String(disp).indexOf(':') >= 0 ? disp : disp + ' min';
+    return {
+      name: ex5Mode === 'run' ? 'Distance run' : 'Distance walk',
+      label: label,
+      body: [
+        { cls: 'lead', text: label + ', in ' + time + '.' },
+        { cls: null,   text: D.substitutionNote },
+        { cls: 'note', text: 'The timer counts this activity\u2019s own allotted time, so the ' +
+                             'session runs longer than 11 minutes by design.' },
+        { cls: 'note', text: 'Step counting, the metronome and the jump prompts belong to the ' +
+                             'stationary run and stay off.' }
+      ]
+    };
+  }
+
   /* A workout belongs to the level it was built for, not to whatever prefs say
      later. You can leave a run paused and change level on Today, so every read
      during a workout goes through run.*, never prefs.*.                       */
@@ -894,6 +926,7 @@
     return c.exercises.map(function (ex, i) {
       var seconds = D.timing.secondsPerExercise[i];
       var target, count = null, unit;
+      var sub = i === 4 ? ex5Substitution(chartId, level, ex5Mode) : null;
       // count/unit are the same target split up, so the workout screen can make
       // the number itself the largest thing on it. A run or walk substitution
       // has no count - the label is the whole target.
@@ -910,7 +943,12 @@
         count = String(lv.steps); unit = 'steps';
         target = lv.steps + ' steps';
       }
-      return { ex: ex, seconds: seconds, target: target, count: count, unit: unit, index: i };
+      return {
+        ex: ex, seconds: seconds, target: target, count: count, unit: unit, index: i,
+        name: sub ? sub.name : ex.name,
+        body: sub ? sub.body : null,      // null = use the exercise's own text
+        figure: !sub                      // no illustration exists for a road run
+      };
     });
   }
 
@@ -1205,7 +1243,7 @@
     $('work-chart').textContent = runLabelText();
     $('work-pos').textContent = (run.i + 1) + ' of ' + run.steps.length;
     $('ex-num').textContent = 'Exercise ' + (run.i + 1) + ' of ' + run.steps.length;
-    $('ex-name').textContent = ex.name;
+    $('ex-name').textContent = s.name;
 
     var t = $('target-big');
     t.innerHTML = '';
@@ -1215,16 +1253,25 @@
 
     var box = $('instructions');
     box.innerHTML = '';
-    box.appendChild(el('p', 'lead', ex.start));
-    box.appendChild(el('p', null, ex.movement));
-    (ex.notes || []).forEach(function (n) { box.appendChild(el('p', 'note', n)); });
+    if (s.body) {
+      s.body.forEach(function (b) { box.appendChild(el('p', b.cls, b.text)); });
+    } else {
+      box.appendChild(el('p', 'lead', ex.start));
+      box.appendChild(el('p', null, ex.movement));
+      (ex.notes || []).forEach(function (n) { box.appendChild(el('p', 'note', n)); });
+    }
 
     // The original booklet's illustration for this exercise, as a reminder.
+    // A substitution has none, and showing the stationary run's would be a lie.
     var img = $('fig-img');
-    img.src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
-    img.alt = 'Illustration: ' + ex.name;
-    $('fig').hidden = false;
-    img.onerror = function () { $('fig').hidden = true; };
+    if (s.figure) {
+      img.src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
+      img.alt = 'Illustration: ' + s.name;
+      $('fig').hidden = false;
+      img.onerror = function () { $('fig').hidden = true; };
+    } else {
+      $('fig').hidden = true;
+    }
 
     // The metronome is started by endTransition, never here — otherwise it
     // ticks underneath the spoken announcement.
@@ -1297,7 +1344,7 @@
     run.trans = transitionSeconds();
     run.voicePending = true;
     var s = run.steps[run.i];
-    Voice.say('Exercise ' + (run.i + 1) + '. ' + s.ex.name + '. ' + s.target + '.',
+    Voice.say('Exercise ' + (run.i + 1) + '. ' + s.name + '. ' + s.target + '.',
       function () { run.voicePending = false; });
 
     // Nothing to wait for: start straight away.
@@ -1311,16 +1358,21 @@
     var s = run.steps[run.i];
     box.hidden = false;
     $('ready-kicker').textContent = run.i === 0 ? 'Get ready' : 'Next up';
-    $('ready-name').textContent = s.ex.name;
+    $('ready-name').textContent = s.name;
     $('ready-target').textContent = s.target;
     var left = Math.max(0, Math.ceil(run.trans));
     $('ready-count').textContent = left > 0 ? String(left) : '·';
+    // A substitution has no illustration; the stationary run's would be a lie.
     var img = $('ready-fig');
-    var src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
-    if (img.getAttribute('src') !== src) {
+    if (!s.figure) {
+      img.hidden = true;
+    } else {
+      var src = 'figures/c' + run.chartId + 'e' + (run.i + 1) + '.png';
       img.hidden = false;
-      img.src = src;
-      img.onerror = function () { img.hidden = true; };
+      if (img.getAttribute('src') !== src) {
+        img.src = src;
+        img.onerror = function () { img.hidden = true; };
+      }
     }
   }
 
@@ -1359,7 +1411,7 @@
       var li = el('li', 'sheet__item' + (i === run.i ? ' is-now' : (i < run.i ? ' is-done' : '')));
       li.appendChild(el('span', 'sheet__n', String(i + 1)));
       var t = el('span', 'sheet__name');
-      t.appendChild(document.createTextNode(s.ex.name));
+      t.appendChild(document.createTextNode(s.name));
       if (i === run.i) t.appendChild(el('span', 'sheet__now', 'you are here'));
       li.appendChild(t);
       li.appendChild(el('span', 'sheet__target', s.target));
