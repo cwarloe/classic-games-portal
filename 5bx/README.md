@@ -31,7 +31,24 @@ Open `5bx/index.html` over HTTP (the app `fetch`es its data file, so `file://` w
 - `runSeconds` / `walkSeconds` drive the timer when exercise 5 is substituted; `runDisplay` / `walkDisplay` are what the UI shows (charts 1–4 print minutes, charts 5–6 print `mins:secs`).
 - `levelOrder` at the top of the file is ascending difficulty (`D-` → `A+`) and defines progression; the printed booklet lists levels in the opposite order.
 
-Changing a number takes effect on reload. Bump `CACHE` in `sw.js` to push an edit to a device that already installed the app.
+Changing a number takes effect on reload. Bump `CACHE` in `sw.js` to push an edit to a device that already installed the app — see **Shipping an update** below for what the device then does.
+
+## Shipping an update
+
+Bump `CACHE` in `sw.js`. That makes the worker byte-different, so the browser installs it, `skipWaiting()` activates it and `clients.claim()` takes over the open page.
+
+The page you are looking at has already run the old `app.js` though, so without help the update only appeared on the launch *after* next — measured, not assumed:
+
+```
+relaunch 1: app code = OLD   caches = 5bx-v14, 5bx-v15
+relaunch 2: app code = NEW   caches = 5bx-v15
+```
+
+`wireUpdates()` closes that gap by reloading once when the new worker takes control, so a single relaunch is enough. Three things it deliberately will not do:
+
+- **Reload on a first install.** There is no previous version to replace, and `controllerchange` fires there too.
+- **Reload twice.** Guarded per page load.
+- **Reload out from under a workout** (or a session waiting to be saved). A deferred update is not lost: the new worker is already in control, so the next launch runs the new code with no reload at all.
 
 ## Provenance of the numbers
 
