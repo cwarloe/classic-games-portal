@@ -1282,10 +1282,17 @@
   }
 
   function paintClock() {
-    var c = $('clock');
-    c.textContent = mmss(run.remaining);
-    c.classList.toggle('is-low', run.remaining <= 5 && !run.paused && !inTransition());
-    c.classList.toggle('is-paused', run.paused);
+    $('clock').textContent = mmss(run.remaining);
+
+    // The bar drains over this exercise's own allotment, so a glance is enough.
+    var total = run.steps[run.i].seconds || 1;
+    var frac = Math.max(0, Math.min(1, run.remaining / total));
+    $('timefill').style.width = (frac * 100).toFixed(1) + '%';
+
+    var bar = $('timebar');
+    bar.classList.toggle('is-low', run.remaining <= 5 && !run.paused && !inTransition());
+    bar.classList.toggle('is-paused', run.paused);
+
     // The header clock shows exercise time — the 11 minutes the plan counts.
     $('work-elapsed').textContent = mmss(run.exElapsed);
   }
