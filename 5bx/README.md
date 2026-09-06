@@ -14,6 +14,7 @@ Open `5bx/index.html` over HTTP (the app `fetch`es its data file, so `file://` w
 | `styles.css` | Dark theme, large tap targets. |
 | `figures/` | The booklet's exercise illustrations, `c{chart}e{exercise}.png`. Regenerate with `tools/extract-5bx-figures.py`. |
 | `sw.js` | Service worker — offline-first over a fixed asset list. |
+| `tests/` | End-to-end tests driving the real app. `npm test` from the repo root; see `tests/README.md`. |
 | `manifest.webmanifest` | Install metadata. |
 
 ## Editing the data
