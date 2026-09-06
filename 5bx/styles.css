@@ -365,10 +365,16 @@ textarea {
 .screen--work { background: var(--bg); }
 .topbar--work { padding-bottom: 6px; }
 .work-meta { flex: 1 1 auto; text-align: center; font-size: 14px; color: var(--fg-dim); font-weight: 650; }
+/* Exercise time so far. Unlabelled it read as just another clock; naming the
+   11 minutes says which of the two times this one is. */
 .elapsed {
-  flex: 0 0 auto; min-width: 44px; text-align: right;
+  flex: 0 0 auto; min-width: 56px; text-align: right; line-height: 1.1;
   font-size: 15px; color: var(--fg-dim);
   font-variant-numeric: tabular-nums;
+}
+.elapsed small {
+  display: block; font-size: 10px; font-weight: 600;
+  letter-spacing: .04em; opacity: .72;
 }
 
 .pips { display: flex; gap: 6px; padding: 0 var(--pad) 4px; }
@@ -416,16 +422,37 @@ textarea {
   color: var(--accent-2);
 }
 
-.clock {
-  font-size: clamp(52px, 18vw, 96px);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -.03em;
-  font-variant-numeric: tabular-nums;
-  margin: 2px 0 6px;
+/* Time left, in the thumb zone above the controls. The bar answers "am I on
+   pace" without being read; the numeral is there when you want it. Two big
+   numerals in the body made the rep count and the clock compete. */
+.timebar {
+  flex: 0 0 auto;
+  position: relative; z-index: 6;      /* stays visible over the jump overlay */
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 var(--pad) 10px;
 }
-.clock.is-paused { opacity: .42; }
-.clock.is-low { color: var(--accent); }
+.timebar__lab {
+  flex: 0 0 auto;
+  font-size: 11px; font-weight: 700; color: var(--fg-dim);
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.timebar__track {
+  flex: 1 1 auto; height: 10px;
+  background: var(--bg-3); border-radius: 999px; overflow: hidden;
+}
+.timebar__fill {
+  height: 100%; width: 100%;
+  background: var(--accent); border-radius: 999px;
+  transition: width .2s linear;        /* tick runs at 200ms, so this is smooth */
+}
+.timebar__t {
+  flex: 0 0 auto; min-width: 78px; text-align: right;
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.timebar.is-paused { opacity: .42; }
+.timebar.is-low .timebar__t { color: var(--accent); }
 
 .fig {
   width: 100%; max-width: 460px;

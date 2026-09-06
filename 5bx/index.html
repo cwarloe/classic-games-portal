@@ -145,7 +145,7 @@
     <header class="topbar topbar--work">
       <button class="icon-btn" id="btn-quit" aria-label="End workout">&times;</button>
       <div class="work-meta"><span id="work-chart"></span><span class="work-meta__pos" id="work-pos"></span></div>
-      <div class="elapsed" id="work-elapsed">0:00</div>
+      <div class="elapsed"><span id="work-elapsed">0:00</span><small>of 11:00</small></div>
     </header>
 
     <div class="pips" id="pips" aria-hidden="true"></div>
@@ -155,8 +155,6 @@
       <h2 class="ex-name" id="ex-name"></h2>
 
       <div class="target-big" id="target-big"></div>
-
-      <div class="clock" id="clock">2:00</div>
 
       <div class="instructions" id="instructions"></div>
 
@@ -199,6 +197,14 @@
         <h2 class="jump__title" id="jump-title"></h2>
         <p class="jump__sub" id="jump-sub"></p>
       </div>
+    </div>
+
+    <!-- Time left on this exercise: a bar you can read without reading, sitting
+         in the thumb zone next to the controls. -->
+    <div class="timebar" id="timebar" role="group" aria-label="Time left on this exercise">
+      <span class="timebar__lab" aria-hidden="true">Left</span>
+      <div class="timebar__track" aria-hidden="true"><div class="timebar__fill" id="timefill"></div></div>
+      <span class="timebar__t" id="clock">2:00</span>
     </div>
 
     <div class="dock dock--work">

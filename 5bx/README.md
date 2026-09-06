@@ -147,9 +147,15 @@ The setting is sticky, so Today carries an `Exercise 5: 1 mile run · Undo` chip
 
 The rep count is the largest thing on the screen. It used to be a 17px pill under the exercise name while the clock ran at 132px — exactly backwards for the moment it matters, when you are mid-movement and glancing up to remember whether it is 20 or 12.
 
-`buildSteps()` therefore splits the target into `count` and `unit`, so the number can be sized on its own: the count at `clamp(64px, 22vw, 108px)` in the accent colour, the unit beside it at a quarter of that. The pill is gone — at this size a border around the number is just noise. The clock moved to `clamp(52px, 18vw, 96px)`: still the second-largest thing, no longer competing.
+`buildSteps()` therefore splits the target into `count` and `unit`, so the number can be sized on its own: the count at `clamp(64px, 22vw, 108px)` in the accent colour, the unit beside it at a quarter of that. The pill is gone — at this size a border around the number is just noise.
 
-A run or walk substitution has no count, so the label *is* the target and renders at `clamp(30px, 9vw, 46px)` instead. Exercise name, target and clock all stay above the fold on a 375×667 screen, including on the longest exercise.
+The clock then left the body entirely. Two big numerals stacked in the middle of the screen competed no matter how they were sized, so time moved to a **bar above the controls**: a track that drains over this exercise's own allotment, with the remaining time as a 26px numeral at its right end. The bar answers "am I on pace" without being read; the numeral is there when you want it; and it sits in the thumb zone beside Pause and skip, which is where you look when you are deciding to act.
+
+It carries the states the old clock had — dimmed while paused, accent when under five seconds — and it sits above the jump overlay rather than behind it, so the time stays visible during a jump set. The header's readout is now labelled `of 11:00`, because two unlabelled times on one screen read as two of the same thing rather than *exercise time so far* and *time left on this exercise*.
+
+Mock-ups of the alternatives (a progress ring around the count, and a large clock at the bottom) were built and rejected. The ring looked best but its arc reads as rep progress, which the app cannot know — an orange arc wrapped around "20 reps" meaning something other than those reps is actively misleading. The large bottom clock just moved the competition to the far end of the screen.
+
+A run or walk substitution has no count, so the label *is* the target and renders at `clamp(30px, 9vw, 46px)` instead. Exercise name and target stay above the fold on a 375×667 screen, including on the longest exercise.
 
 ### When exercise 5 is substituted
 
