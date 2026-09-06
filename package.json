@@ -5,10 +5,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node 5bx/tests/run.js",
+    "test:5bx": "node 5bx/tests/run.js",
+    "test:probes": "node 5bx/tests/probes/state-and-timing.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }
