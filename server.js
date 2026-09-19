@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 
 const app = express();
 
-// Serve index.html at the root (landing page linking to 5BX and the games
+// Serve index.html at the root (landing page linking to the games
 // portal). Static hosts like GitHub Pages do the same, so local and deployed
 // behave identically.
 app.use(express.static(__dirname));
