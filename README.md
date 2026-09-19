@@ -18,7 +18,7 @@
 ```bash
 npm install
 npm start
-# then open http://localhost:3000  (server.js redirects "/" → /portal.html)
+# then open http://localhost:3000
 ```
 If you add or remove games under `/games`, regenerate the manifest:
 ```bash

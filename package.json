@@ -1,7 +1,7 @@
 {
-  "name": "multiplayer-asteroids",
+  "name": "classic-games-portal",
   "version": "1.0.0",
-  "description": "Multiplayer Asteroids game in classic Atari style",
+  "description": "Retro arcade portal: eight classic games, three with multiplayer over WebSockets",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node server.js
-    healthCheckPath: /portal.html
+    healthCheckPath: /
     autoDeploy: true
     envVars:
       - key: PORT
