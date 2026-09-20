@@ -45,8 +45,13 @@
   }
 
   function chartById(id) {
+    return chartOrNull(id) || D.charts[0];    // forgiving: callers want a chart to render
+  }
+  // Strict: validating imported data must not silently accept a chart that
+  // does not exist just because chartById() would fall back to Chart 1.
+  function chartOrNull(id) {
     for (var i = 0; i < D.charts.length; i++) if (D.charts[i].id === id) return D.charts[i];
-    return D.charts[0];
+    return null;
   }
   function levelIndex(name) { return D.levelOrder.indexOf(name); }
 
@@ -1674,15 +1679,121 @@
     host.appendChild(svg);
   }
 
-  function exportData() {
-    var payload = JSON.stringify({ exported: new Date().toISOString(), prefs: prefs, sessions: sessions }, null, 2);
+  /* ============================ backup ============================
+     Everything lives in localStorage and nowhere else, so a backup is the only
+     thing standing between a cleared site and a lost year. Export used to be
+     clipboard-only with no way back in, which made it a memento rather than a
+     backup.                                                                  */
+
+  var BACKUP_VERSION = 1;
+
+  function normalisePrefs(p) {
+    p = (p && typeof p === 'object') ? p : {};
+    if (typeof p.chartId !== 'number') p.chartId = 1;
+    if (typeof p.level !== 'string') p.level = 'D-';
+    var pc = chartOrNull(p.chartId);
+    if (!pc || !pc.levels[p.level]) { p.chartId = 1; p.level = 'D-'; }
+    if (p.ex5Mode !== 'run' && p.ex5Mode !== 'walk') p.ex5Mode = 'stationary';
+    if (typeof p.age !== 'number' || p.age <= 0) p.age = p.age === null ? null : (p.age || null);
+    // Coaching aids default off, so an existing install behaves as before.
+    if (p.voiceCues === undefined) p.voiceCues = false;
+    if (p.metronome === undefined) p.metronome = false;
+    if (!p.jumpResume) p.jumpResume = 'auto';
+    if (p.jumpWindow === undefined) p.jumpWindow = null;
+    if (p.seenWelcome === undefined) p.seenWelcome = false;
+    if (['small', 'default', 'large', 'xlarge'].indexOf(p.textSize) < 0) p.textSize = 'default';
+    return p;
+  }
+
+  function backupPayload() {
+    return JSON.stringify({
+      app: '5bx', version: BACKUP_VERSION,
+      exported: new Date().toISOString(),
+      prefs: prefs, sessions: sessions
+    }, null, 2);
+  }
+
+  function backupName() {
+    var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return '5bx-backup-' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '.json';
+  }
+
+  // A real file, because a string on the clipboard survives exactly as long as
+  // the next thing you copy.
+  function saveBackupFile() {
+    try {
+      var blob = new Blob([backupPayload()], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = backupName();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) {
+      copyBackup();     // some in-app browsers block downloads
+    }
+  }
+
+  function copyBackup() {
+    var payload = backupPayload();
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(payload).then(function () {
-        alert('Your ' + sessions.length + ' session(s) were copied to the clipboard as JSON.');
+        alert('Your ' + sessions.length + ' session(s) were copied as text. Paste them somewhere safe.');
       }).catch(function () { window.prompt('Copy your data:', payload); });
     } else {
       window.prompt('Copy your data:', payload);
     }
+  }
+
+  function validSession(s) {
+    if (!s || typeof s !== 'object') return false;
+    var c = typeof s.chartId === 'number' ? chartOrNull(s.chartId) : null;
+    if (!c || typeof s.level !== 'string' || !c.levels[s.level]) return false;
+    return !!s.date && !isNaN(new Date(s.date).getTime());
+  }
+
+  // Returns { ok, error } or { ok:true, prefs, rows, skipped }.
+  function parseBackup(text) {
+    var data;
+    try { data = JSON.parse(text); }
+    catch (e) { return { ok: false, error: 'That is not valid backup text.' }; }
+    if (!data || typeof data !== 'object') return { ok: false, error: 'That backup is empty.' };
+    if (!Array.isArray(data.sessions)) return { ok: false, error: 'No sessions found in that backup.' };
+
+    var rows = [], skipped = 0, seen = {};
+    data.sessions.forEach(function (s) {
+      if (!validSession(s)) { skipped++; return; }
+      var id = String(s.id || (new Date(s.date).getTime() + '-' + rows.length));
+      if (seen[id]) { skipped++; return; }
+      seen[id] = true;
+      s.id = id;
+      rows.push(s);
+    });
+    return { ok: true, prefs: data.prefs, rows: rows, skipped: skipped };
+  }
+
+  function applyBackup(parsed, mode) {
+    if (mode === 'replace') {
+      sessions = parsed.rows.slice();
+    } else {
+      var have = {};
+      sessions.forEach(function (s) { have[String(s.id)] = true; });
+      var added = parsed.rows.filter(function (s) { return !have[String(s.id)]; });
+      sessions = sessions.concat(added);
+      parsed.added = added.length;
+    }
+    sessions.sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+
+    if (parsed.prefs && typeof parsed.prefs === 'object') {
+      prefs = normalisePrefs(parsed.prefs);
+      delete prefs.layoffAck;        // a restored layoff decision is not this device's
+      applyTextSize();
+    }
+    var okP = save(K_PREFS, prefs);
+    var okS = save(K_SESSIONS, sessions);
+    return okP && okS;
   }
 
   /* ============================ splash ============================
@@ -1793,8 +1904,36 @@
 
   /* ============================ settings ============================ */
 
+  var restoreMode = 'merge';     // merging is the safe default; replace asks first
+
+  function paintRestoreMode() {
+    var bs = $('restore-mode').querySelectorAll('.seg__btn');
+    for (var i = 0; i < bs.length; i++) {
+      bs[i].setAttribute('aria-pressed', bs[i].dataset.restore === restoreMode ? 'true' : 'false');
+    }
+    $('restore-note').textContent = restoreMode === 'replace'
+      ? 'Throws away what is on this device and uses the backup instead.'
+      : 'Keeps what is here and adds anything the backup has that this device does not.';
+  }
+
+  function restoreNote(text, bad) {
+    var n = $('restore-result');
+    n.textContent = text;
+    n.classList.toggle('is-bad', !!bad);
+  }
+
+  // Every font size is rem, so one attribute on <html> moves the whole app.
+  function applyTextSize() {
+    document.documentElement.setAttribute('data-text', prefs.textSize || 'default');
+  }
+
   function renderSettings() {
     renderEx5();
+    paintRestoreMode();
+    var ts = $('set-text').querySelectorAll('.seg__btn');
+    for (var t = 0; t < ts.length; t++) {
+      ts[t].setAttribute('aria-pressed', ts[t].dataset.text === (prefs.textSize || 'default') ? 'true' : 'false');
+    }
     $('set-voice').setAttribute('aria-checked', prefs.voiceCues ? 'true' : 'false');
     $('set-metro').setAttribute('aria-checked', prefs.metronome ? 'true' : 'false');
     $('voice-support').hidden = Voice.supported;
@@ -1955,6 +2094,68 @@
       welCard = 1;
       $('wel-age').value = prefs.age || '';
       go('welcome');
+    });
+
+    /* ---------- backup and restore ---------- */
+    $('set-text').addEventListener('click', function (e) {
+      var b = e.target.closest('.seg__btn');
+      if (!b) return;
+      prefs.textSize = b.dataset.text;
+      save(K_PREFS, prefs);
+      applyTextSize();
+      renderSettings();
+    });
+
+    $('btn-backup').addEventListener('click', saveBackupFile);
+    $('btn-copy').addEventListener('click', copyBackup);
+
+    $('restore-file').addEventListener('change', function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () {
+        $('restore-text').value = String(fr.result || '');
+        restoreNote(f.name + ' loaded — check the mode below, then Restore.');
+      };
+      fr.onerror = function () { restoreNote('That file could not be read.', true); };
+      fr.readAsText(f);
+    });
+
+    $('restore-mode').addEventListener('click', function (e) {
+      var b = e.target.closest('.seg__btn');
+      if (!b) return;
+      restoreMode = b.dataset.restore;
+      paintRestoreMode();
+    });
+
+    $('btn-restore').addEventListener('click', function () {
+      if (run) { restoreNote('Finish or discard the workout in progress first.', true); return; }
+      var text = $('restore-text').value.trim();
+      if (!text) { restoreNote('Choose a file or paste a backup first.', true); return; }
+
+      var parsed = parseBackup(text);
+      if (!parsed.ok) { restoreNote(parsed.error, true); return; }
+      if (!parsed.rows.length && !parsed.prefs) { restoreNote('That backup has nothing in it.', true); return; }
+
+      if (restoreMode === 'replace' && sessions.length &&
+          !confirm('Replace your ' + sessions.length + ' logged session(s) with the ' +
+                   parsed.rows.length + ' in this backup? This cannot be undone.')) return;
+
+      if (!applyBackup(parsed, restoreMode)) {
+        restoreNote('This device would not let the app save, so nothing was restored.', true);
+        return;
+      }
+
+      var msg = restoreMode === 'replace'
+        ? 'Restored ' + parsed.rows.length + ' session(s).'
+        : 'Added ' + parsed.added + ' new session(s); ' +
+          (parsed.rows.length - parsed.added) + ' were already here.';
+      if (parsed.skipped) msg += ' ' + parsed.skipped + ' unreadable row(s) skipped.';
+      msg += ' Your level is Chart ' + prefs.chartId + ' ' + prefs.level + '.';
+      restoreNote(msg);
+      $('restore-text').value = '';
+      $('restore-file').value = '';
+      renderSettings();
     });
 
     $('set-trans').addEventListener('click', function (e) {
@@ -2216,7 +2417,7 @@
       go('home');
     });
 
-    $('btn-export').addEventListener('click', exportData);
+    $('btn-export').addEventListener('click', function () { go('settings'); $('restore').open = false; });
 
     // Recover timer drift when the tab is backgrounded and restored.
     document.addEventListener('visibilitychange', function () {
@@ -2259,15 +2460,9 @@
     })
     .then(function (data) {
       D = data;
-      prefs = load(K_PREFS, null) || { chartId: 1, level: 'D-', ex5Mode: 'stationary', age: null };
-      // Coaching aids default off, so an existing install behaves as before.
-      if (prefs.voiceCues === undefined) prefs.voiceCues = false;
-      if (prefs.metronome === undefined) prefs.metronome = false;
-      if (!prefs.jumpResume) prefs.jumpResume = 'auto';
-      if (prefs.jumpWindow === undefined) prefs.jumpWindow = null;
-      if (!chartById(prefs.chartId).levels[prefs.level]) { prefs.chartId = 1; prefs.level = 'D-'; }
-      if (prefs.seenWelcome === undefined) prefs.seenWelcome = false;
+      prefs = normalisePrefs(load(K_PREFS, null));
       save(K_PREFS, prefs);   // persist the normalised defaults
+      applyTextSize();
       Voice.init();
       sessions = load(K_SESSIONS, []);
       restoreRun();          // a workout left running comes back paused

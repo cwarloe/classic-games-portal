@@ -271,6 +271,17 @@
         <p class="field__hint" id="ex5-note"></p>
       </div>
 
+      <div class="field">
+        <label class="field__label">Text size</label>
+        <div class="seg" id="set-text" role="group" aria-label="Text size">
+          <button class="seg__btn" data-text="small">S</button>
+          <button class="seg__btn" data-text="default">M</button>
+          <button class="seg__btn" data-text="large">L</button>
+          <button class="seg__btn" data-text="xlarge">XL</button>
+        </div>
+        <p class="field__hint">Scales everything in the app. M follows whatever default font size your browser is set to.</p>
+      </div>
+
       <h2 class="set-head">Coaching aids</h2>
       <p class="set-intro">Both are off by default &mdash; the workout behaves exactly as before until you turn them on. They apply to the stationary run only.</p>
 
@@ -333,6 +344,36 @@
       <div class="row-btns">
         <button class="btn btn--ghost" id="btn-replay-intro">Show the intro again</button>
       </div>
+
+      <h2 class="set-head">Your data</h2>
+      <p class="set-intro">Everything lives on this device and nowhere else. A backup is the only way your history survives a new phone, cleared site data, or a reinstall.</p>
+
+      <div class="row-btns">
+        <button class="btn btn--ghost" id="btn-backup">Save backup</button>
+        <button class="btn btn--ghost" id="btn-copy">Copy text</button>
+      </div>
+
+      <details class="adv" id="restore">
+        <summary class="adv__summary">Restore from a backup</summary>
+        <p class="field__hint adv__intro">Pick a backup file, or paste text you copied earlier. This restores your level, your logged sessions and your settings.</p>
+
+        <label class="btn btn--ghost file-btn" for="restore-file">Choose a backup file</label>
+        <input type="file" id="restore-file" accept="application/json,.json,text/plain" />
+
+        <textarea id="restore-text" rows="4" placeholder="&hellip;or paste a backup here"></textarea>
+
+        <div class="field">
+          <label class="field__label">What to do with it</label>
+          <div class="seg" id="restore-mode" role="group">
+            <button class="seg__btn" data-restore="merge">Merge</button>
+            <button class="seg__btn" data-restore="replace">Replace</button>
+          </div>
+          <p class="field__hint" id="restore-note"></p>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="btn-restore">Restore</button>
+        <p class="field__hint" id="restore-result" role="status"></p>
+      </details>
 
       <details class="adv" id="adv">
         <summary class="adv__summary">Advanced</summary>

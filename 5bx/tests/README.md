@@ -33,8 +33,10 @@ CHROMIUM_PATH=/path/to/chrome npm test       # use a specific browser binary
 | `07-substitution.js` | A substituted exercise 5 describes the substitution everywhere, not the stationary run |
 | `08-updates.js` | A new deploy lands on the first relaunch, and never reloads out from under a workout |
 | `09-time-bar.js` | The clock lives in a time bar above the controls, and drains with the exercise |
+| `10-backup.js` | Backup round-trips; merge dedupes; junk is refused without losing data; the file download works |
+| `11-text-size.js` | Every font size is rem; the S/M/L/XL setting scales the whole app without breaking any layout |
 
-About 190 assertions. Console errors fail a suite even when every assertion passes.
+About 230 assertions. Console errors fail a suite even when every assertion passes.
 
 ## Probes
 
