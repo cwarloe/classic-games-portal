@@ -1,16 +1,17 @@
 # Classic Games Portal
 
-🎮 **A retro arcade game portal featuring 7 classic games with authentic sounds and gameplay!**
+🎮 **A retro arcade game portal featuring 8 classic games with authentic sounds and gameplay!**
 
 ## Games Included
 
-- 🚀 **Asteroids** (Multiplayer) - Classic space shooter with asteroid splitting and physics
+- 🚀 **Asteroids** (Multiplayer) - Classic space shooter with asteroid splitting and physics; also has a touch/tilt **mobile** entry at `games/asteroids/mobile.html`
 - 👾 **Space Invaders** - Alien invasion with destructible bunkers and formations
 - 🐸 **Frogger** - Navigate traffic and rivers to reach home safely
 - 👻 **Pac-Man** - Maze chase with ghosts, power pellets, and strategic gameplay
-- 🛸 **Galaga** - Space shooter with dive-bombing enemies and wave progression
-- 🤖 **Berzerk** - Maze shooter with robots and the infamous Evil Otto
-- 📱 **Asteroids Mobile** - Touch-optimized with virtual joystick and tilt controls
+- 🛸 **Galaga** (Multiplayer) - Space shooter with dive-bombing enemies and wave progression
+- 🤖 **Berzerk** (Multiplayer) - Maze shooter with robots and the infamous Evil Otto
+- 🛡️ **Missile Command** - Defend cities from incoming missiles
+- 🪖 **Battlezone** - Vector tank combat
 
 **All games feature retro arcade sound effects** generated with Web Audio API for authentic 80s arcade feel!
 
@@ -18,7 +19,7 @@
 ```bash
 npm install
 npm start
-# then open http://localhost:3000
+# then open http://localhost:8080
 ```
 If you add or remove games under `/games`, regenerate the manifest:
 ```bash
@@ -39,4 +40,4 @@ python tools/build-manifest.py
 
 ## Notes
 - `node_modules/` is intentionally not in the repo. Run `npm install`.
-- Multiplayer Asteroids is in `games/asteroids/` and uses `/ws` on the same origin.
+- Multiplayer: Asteroids (`/ws`), Galaga (`/galaga`), and Berzerk (`/berzerk`) on the same origin.

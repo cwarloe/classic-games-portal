@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Your Classic Games Portal can be deployed to various cloud platforms. All games work online except multiplayer Asteroids requires a WebSocket server.
+Your Classic Games Portal can be deployed to various cloud platforms. All games work online; multiplayer (Asteroids, Galaga, Berzerk) requires a WebSocket-capable Node server.
 
 ## Quick Deploy Options
 
@@ -40,7 +40,7 @@ flyctl launch
 flyctl deploy
 ```
 
-### Option 4: Netlify/Vercel (Static hosting - Asteroids multiplayer won't work)
+### Option 4: Netlify/Vercel (Static hosting — multiplayer WebSockets won't work)
 
 For single-player games only:
 
