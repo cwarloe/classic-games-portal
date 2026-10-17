@@ -12,4 +12,5 @@ h1 { font-size: 1.1rem; margin: 0; white-space: nowrap; letter-spacing: .2px; }
 .card__body { padding: .9rem; }
 .card__title { font-size: 1rem; margin: 0 0 .25rem 0; }
 .card__meta { margin: 0; opacity: .75; font-size: .85rem; }
+.card__badge { display: inline-block; margin-top: .4rem; padding: .2rem .5rem; border-radius: 999px; font-size: .75rem; background: #1e3a5f; color: #6ab0ff; border: 1px solid #2a5a9f; }
 footer { padding: 1rem; opacity: .6; text-align: center; font-size: .85rem; }

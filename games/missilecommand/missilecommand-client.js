@@ -32,9 +32,9 @@ let score = 0;
 let wave = 1;
 let gameOver = false;
 let batteries = [
-    { x: BATTERY_POSITIONS[0].x, y: BATTERY_POSITIONS[0].y, ammo: 10, maxAmmo: 10 },
-    { x: BATTERY_POSITIONS[1].x, y: BATTERY_POSITIONS[1].y, ammo: 10, maxAmmo: 10 },
-    { x: BATTERY_POSITIONS[2].x, y: BATTERY_POSITIONS[2].y, ammo: 10, maxAmmo: 10 }
+    { x: BATTERY_POSITIONS[0].x, y: BATTERY_POSITIONS[0].y, ammo: 10, maxAmmo: 10, alive: true },
+    { x: BATTERY_POSITIONS[1].x, y: BATTERY_POSITIONS[1].y, ammo: 10, maxAmmo: 10, alive: true },
+    { x: BATTERY_POSITIONS[2].x, y: BATTERY_POSITIONS[2].y, ammo: 10, maxAmmo: 10, alive: true }
 ];
 let cities = [...CITY_POSITIONS];
 let enemyMissiles = [];
@@ -42,6 +42,11 @@ let playerMissiles = [];
 let explosions = [];
 let waveActive = false;
 let waveCompleteTimer = 0;
+let missileQueue = [];
+let missileSpawnTimer = 0;
+const MISSILE_SPAWN_INTERVAL = 30; // frames between enemy missile spawns (~0.5s at 60fps)
+let waveMessageTimer = 0;
+const WAVE_MESSAGE_DURATION = 120; // frames to show "WAVE X" banner
 let crosshair = { x: 400, y: 300 };
 
 // Input
@@ -97,7 +102,7 @@ function fireFromNearestBattery(targetX, targetY) {
     let nearestDist = Infinity;
 
     for (let i = 0; i < batteries.length; i++) {
-        if (batteries[i].ammo > 0) {
+        if (batteries[i].alive && batteries[i].ammo > 0) {
             const dist = Math.hypot(batteries[i].x - targetX, batteries[i].y - targetY);
             if (dist < nearestDist) {
                 nearestDist = dist;
@@ -114,7 +119,7 @@ function fireFromNearestBattery(targetX, targetY) {
 function fireMissile(batteryIndex, targetX, targetY) {
     const battery = batteries[batteryIndex];
 
-    if (battery.ammo <= 0) return;
+    if (!battery.alive || battery.ammo <= 0) return;
 
     battery.ammo--;
 
@@ -135,14 +140,16 @@ function fireMissile(batteryIndex, targetX, targetY) {
 
 function spawnWave() {
     waveActive = true;
+    waveCompleteTimer = 0;
+    waveMessageTimer = WAVE_MESSAGE_DURATION;
     const missileCount = 5 + wave * 2;
     const speed = 1 + wave * 0.2;
 
+    missileQueue = [];
     for (let i = 0; i < missileCount; i++) {
-        setTimeout(() => {
-            spawnEnemyMissile(speed);
-        }, i * 500);
+        missileQueue.push(speed);
     }
+    missileSpawnTimer = MISSILE_SPAWN_INTERVAL;
 }
 
 function spawnEnemyMissile(speed) {
@@ -185,6 +192,18 @@ function spawnEnemyMissile(speed) {
 function update() {
     if (gameOver) return;
 
+    // Tick wave message
+    if (waveMessageTimer > 0) waveMessageTimer--;
+
+    // Spawn queued enemy missiles
+    if (waveActive && missileQueue.length > 0) {
+        missileSpawnTimer--;
+        if (missileSpawnTimer <= 0) {
+            spawnEnemyMissile(missileQueue.shift());
+            missileSpawnTimer = MISSILE_SPAWN_INTERVAL;
+        }
+    }
+
     // Update player missiles
     for (let i = playerMissiles.length - 1; i >= 0; i--) {
         const m = playerMissiles[i];
@@ -200,7 +219,7 @@ function update() {
 
         if (dist < m.speed) {
             // Reached target - explode
-            createExplosion(m.targetX, m.targetY, '#0ff', true);
+            createExplosion(m.targetX, m.targetY, '#00ffff', true);
             playerMissiles.splice(i, 1);
             sound.play('explosion');
         } else {
@@ -233,17 +252,15 @@ function update() {
         }
 
         // Check collision with explosions
-        let hitExplosion = false;
         for (const exp of explosions) {
             if (exp.playerExplosion && exp.growing) {
                 const expDist = Math.hypot(m.x - exp.x, m.y - exp.y);
                 if (expDist < exp.radius) {
-                    createExplosion(m.x, m.y, '#ff0', false);
+                    createExplosion(m.x, m.y, '#ffff00', false);
                     enemyMissiles.splice(i, 1);
                     score += 25 * wave;
                     sound.play('hit');
                     updateUI();
-                    hitExplosion = true;
                     break;
                 }
             }
@@ -267,12 +284,14 @@ function update() {
         }
     }
 
-    // Check wave completion
-    if (waveActive && enemyMissiles.length === 0 && playerMissiles.length === 0) {
+    // Check wave completion - only after all missiles have spawned and been cleared
+    if (waveActive && missileQueue.length === 0 && enemyMissiles.length === 0 && playerMissiles.length === 0) {
         waveCompleteTimer++;
         if (waveCompleteTimer > 60) {
             completeWave();
         }
+    } else {
+        waveCompleteTimer = 0;
     }
 
     // Check game over
@@ -282,14 +301,24 @@ function update() {
 }
 
 function handleEnemyMissileHit(x, y) {
-    createExplosion(x, y, '#f00', false);
+    createExplosion(x, y, '#ff0000', false);
     sound.play('explosion');
 
-    // Check if city was hit
+    // Check if a city was hit
     for (const city of cities) {
         if (city.alive && Math.hypot(city.x - x, city.y - y) < 30) {
             city.alive = false;
             sound.play('death');
+        }
+    }
+
+    // Check if a battery was hit
+    for (const battery of batteries) {
+        if (battery.alive && Math.hypot(battery.x - x, battery.y - y) < 25) {
+            battery.alive = false;
+            battery.ammo = 0;
+            sound.play('death');
+            updateUI();
         }
     }
 }
@@ -319,17 +348,13 @@ function completeWave() {
     const ammoBonus = totalAmmo * 5 * wave;
     score += ammoBonus;
 
-    // Refill ammo
-    batteries.forEach(b => b.ammo = b.maxAmmo);
+    // Restore and refill batteries
+    batteries.forEach(b => { b.alive = true; b.ammo = b.maxAmmo; });
 
     sound.play('powerup');
     wave++;
-    waveActive = false;
     updateUI();
-
-    setTimeout(() => {
-        spawnWave();
-    }, 2000);
+    spawnWave();
 }
 
 function endGame() {
@@ -338,6 +363,13 @@ function endGame() {
     wavesCompletedEl.textContent = `Waves Completed: ${wave - 1}`;
     gameOverScreen.classList.add('show');
     sound.play('death');
+}
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function draw() {
@@ -366,20 +398,26 @@ function draw() {
 
     // Draw batteries
     batteries.forEach((battery, i) => {
-        ctx.fillStyle = battery.ammo > 0 ? '#0f0' : '#333';
-        ctx.beginPath();
-        ctx.moveTo(battery.x - 15, battery.y);
-        ctx.lineTo(battery.x + 15, battery.y);
-        ctx.lineTo(battery.x, battery.y - 20);
-        ctx.closePath();
-        ctx.fill();
+        if (battery.alive) {
+            ctx.fillStyle = battery.ammo > 0 ? '#0f0' : '#333';
+            ctx.beginPath();
+            ctx.moveTo(battery.x - 15, battery.y);
+            ctx.lineTo(battery.x + 15, battery.y);
+            ctx.lineTo(battery.x, battery.y - 20);
+            ctx.closePath();
+            ctx.fill();
 
-        // Draw ammo indicator
-        if (battery.ammo > 0) {
-            ctx.fillStyle = '#fff';
-            ctx.font = '10px Courier New';
-            ctx.textAlign = 'center';
-            ctx.fillText(battery.ammo, battery.x, battery.y - 5);
+            // Draw ammo indicator
+            if (battery.ammo > 0) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(battery.ammo, battery.x, battery.y - 5);
+            }
+        } else {
+            // Draw destroyed battery as rubble
+            ctx.fillStyle = '#555';
+            ctx.fillRect(battery.x - 15, battery.y - 5, 30, 5);
         }
     });
 
@@ -425,8 +463,8 @@ function draw() {
     explosions.forEach(exp => {
         const gradient = ctx.createRadialGradient(exp.x, exp.y, 0, exp.x, exp.y, exp.radius);
         gradient.addColorStop(0, exp.color);
-        gradient.addColorStop(0.5, exp.color + '88');
-        gradient.addColorStop(1, exp.color + '00');
+        gradient.addColorStop(0.5, hexToRgba(exp.color, 0.53));
+        gradient.addColorStop(1, hexToRgba(exp.color, 0));
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -440,6 +478,20 @@ function draw() {
         ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
         ctx.stroke();
     });
+
+    // Draw wave banner
+    if (waveMessageTimer > 0) {
+        const alpha = Math.min(1, waveMessageTimer / 30); // fade out over last 30 frames
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#ff0';
+        ctx.font = 'bold 36px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`WAVE ${wave}`, canvas.width / 2, canvas.height / 2 + 13);
+        ctx.globalAlpha = 1;
+    }
 
     // Draw crosshair
     if (!gameOver) {
@@ -461,12 +513,14 @@ function draw() {
 function updateUI() {
     scoreEl.textContent = `Score: ${score}`;
     waveEl.textContent = `Wave: ${wave}`;
-    ammoEl.textContent = `Left: ${batteries[0].ammo} | Center: ${batteries[1].ammo} | Right: ${batteries[2].ammo}`;
+    const batteryLabel = b => b.alive ? b.ammo : 'X';
+    ammoEl.textContent = `Left: ${batteryLabel(batteries[0])} | Center: ${batteryLabel(batteries[1])} | Right: ${batteryLabel(batteries[2])}`;
 }
 
 function gameLoop() {
     update();
     draw();
+    window.frameCount = (window.frameCount || 0) + 1;
     requestAnimationFrame(gameLoop);
 }
 
