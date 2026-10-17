@@ -1,5 +1,7 @@
 # Implementation Summary - Turn-Based Multiplayer & Bug Fixes
 
+> **Note (Oct 2026):** Frogger and Pac-Man have since been removed from the portal; their sections below are historical.
+
 ## COMPLETED TASKS
 
 ### Bug Fixes (All Complete ✅)

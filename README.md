@@ -1,13 +1,11 @@
 # Classic Games Portal
 
-🎮 **A retro arcade game portal featuring 8 classic games with authentic sounds and gameplay!**
+🎮 **A retro arcade game portal featuring 6 classic games with authentic sounds and gameplay!**
 
 ## Games Included
 
 - 🚀 **Asteroids** (Multiplayer) - Classic space shooter with asteroid splitting and physics; also has a touch/tilt **mobile** entry at `games/asteroids/mobile.html`
 - 👾 **Space Invaders** - Alien invasion with destructible bunkers and formations
-- 🐸 **Frogger** - Navigate traffic and rivers to reach home safely
-- 👻 **Pac-Man** - Maze chase with ghosts, power pellets, and strategic gameplay
 - 🛸 **Galaga** (Multiplayer) - Space shooter with dive-bombing enemies and wave progression
 - 🤖 **Berzerk** (Multiplayer) - Maze shooter with robots and the infamous Evil Otto
 - 🛡️ **Missile Command** - Defend cities from incoming missiles

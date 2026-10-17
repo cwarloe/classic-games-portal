@@ -54,6 +54,10 @@ class Battlezone {
         // Input
         this.keys = {};
 
+        // Kill tracking for level progression
+        this.killCount = 0;
+        this.killsPerLevel = 10;
+
         // Setup
         this.setupInput();
         this.setupUI();
@@ -61,6 +65,7 @@ class Battlezone {
         // Start game
         this.lastTime = performance.now();
         this.gameLoop();
+        setTimeout(() => this.showLevelMessage('LEVEL 1'), 500);
     }
 
     generateMountains() {
@@ -121,6 +126,7 @@ class Battlezone {
         this.bullets = [];
         this.enemies = [];
         this.enemyBullets = [];
+        this.killCount = 0;
 
         document.getElementById('gameOver').style.display = 'none';
 
@@ -200,17 +206,7 @@ class Battlezone {
         // Check collisions
         this.checkCollisions();
 
-        // Check level completion
-        if (this.enemies.length === 0 && this.level < 10) {
-            // Small delay before next level
-            const allEnemiesDeadTime = this.allEnemiesDeadTime || performance.now();
-            if (performance.now() - allEnemiesDeadTime > 3000) {
-                this.nextLevel();
-                delete this.allEnemiesDeadTime;
-            } else {
-                this.allEnemiesDeadTime = allEnemiesDeadTime;
-            }
-        }
+        // Level progression handled by kill count in checkCollisions
     }
 
     updatePlayer(dt) {
@@ -352,7 +348,7 @@ class Battlezone {
                 const dz = bullet.z - enemy.z;
                 const dist = Math.sqrt(dx * dx + dz * dz);
 
-                if (dist < 3) {
+                if (dist < 5) {
                     // Hit!
                     this.bullets.splice(i, 1);
                     enemy.health--;
@@ -360,7 +356,12 @@ class Battlezone {
                     if (enemy.health <= 0) {
                         this.enemies.splice(j, 1);
                         this.score += 100 * this.level;
+                        this.killCount++;
                         sound.play('explosion');
+                        if (this.killCount >= this.killsPerLevel) {
+                            this.killCount = 0;
+                            this.nextLevel();
+                        }
                     } else {
                         sound.play('hit');
                     }
@@ -377,7 +378,7 @@ class Battlezone {
             const dz = bullet.z - this.player.z;
             const dist = Math.sqrt(dx * dx + dz * dz);
 
-            if (dist < 2) {
+            if (dist < 3) {
                 this.enemyBullets.splice(i, 1);
                 this.hitPlayer();
             }
@@ -473,6 +474,9 @@ class Battlezone {
         ctx.lineTo(width, centerY + 50);
         ctx.stroke();
 
+        // Draw perspective ground grid
+        this.renderGroundGrid(ctx, width, height, centerX, centerY, fov);
+
         // Collect all 3D objects to render (with depth sorting)
         const renderQueue = [];
 
@@ -547,21 +551,79 @@ class Battlezone {
         // Sort by depth (far to near)
         renderQueue.sort((a, b) => b.z - a.z);
 
-        // Render all objects
+        // Render all objects — project each to the ground plane first
+        const horizonY = centerY + 50;
+        const camH = 2.5; // camera height (matches renderGroundGrid)
         renderQueue.forEach(obj => {
             const screenX = centerX + (obj.x / obj.z) * fov;
-            const scale = fov / obj.z;
+            const scale = Math.min(fov / obj.z, 20); // cap so close objects don't explode
+            const groundY = horizonY + (camH / obj.z) * fov; // projected ground Y for this depth
 
             if (obj.type === 'mountain') {
-                this.renderMountain(ctx, screenX, centerY + 50, scale, obj.data);
+                this.renderMountain(ctx, screenX, horizonY, scale, obj.data);
             } else if (obj.type === 'enemy') {
-                this.renderEnemy(ctx, screenX, centerY, scale, obj.data, obj.x, obj.z);
+                this.renderEnemy(ctx, screenX, groundY, scale, obj.data, obj.x, obj.z);
             } else if (obj.type === 'bullet') {
-                this.renderBullet(ctx, screenX, centerY, scale);
+                // Project at cannon height (1.5 units above ground) so bullets are visible
+                const bulletY = horizonY + ((camH - 1.5) / obj.z) * fov;
+                this.renderBullet(ctx, screenX, bulletY, scale);
             } else if (obj.type === 'enemyBullet') {
-                this.renderEnemyBullet(ctx, screenX, centerY, scale);
+                const bulletY = horizonY + ((camH - 1.5) / obj.z) * fov;
+                this.renderEnemyBullet(ctx, screenX, bulletY, scale);
             }
         });
+    }
+
+    renderGroundGrid(ctx, width, height, centerX, centerY, fov) {
+        const horizonY = centerY + 50;
+        const camH = 2.5; // camera height above ground plane
+        const cos = Math.cos(-this.player.angle);
+        const sin = Math.sin(-this.player.angle);
+
+        // Project a world-space ground point to screen coords
+        const project = (worldX, worldZ) => {
+            const dx = worldX - this.player.x;
+            const dz = worldZ - this.player.z;
+            const rx = dx * cos - dz * sin;
+            const rz = dx * sin + dz * cos;
+            if (rz < 0.5) return null;
+            return {
+                x: centerX + (rx / rz) * fov,
+                y: horizonY + (camH / rz) * fov
+            };
+        };
+
+        const drawLine = (x1, z1, x2, z2) => {
+            const a = project(x1, z1);
+            const b = project(x2, z2);
+            if (!a || !b) return;
+            if (a.y < horizonY && b.y < horizonY) return;
+            ctx.beginPath();
+            ctx.moveTo(a.x, Math.max(a.y, horizonY));
+            ctx.lineTo(b.x, Math.max(b.y, horizonY));
+            ctx.stroke();
+        };
+
+        ctx.save();
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 0.75;
+        ctx.globalAlpha = 0.18;
+
+        const G = 10;  // grid cell size in world units
+        const R = 9;   // radius in cells
+        const px = Math.round(this.player.x / G);
+        const pz = Math.round(this.player.z / G);
+
+        // Lines running in the Z direction (left/right grid lines)
+        for (let gx = px - R; gx <= px + R; gx++) {
+            drawLine(gx * G, (pz - R) * G, gx * G, (pz + R) * G);
+        }
+        // Lines running in the X direction (near/far grid lines)
+        for (let gz = pz - R; gz <= pz + R; gz++) {
+            drawLine((px - R) * G, gz * G, (px + R) * G, gz * G);
+        }
+
+        ctx.restore();
     }
 
     renderMountain(ctx, screenX, screenY, scale, mountain) {
@@ -578,40 +640,43 @@ class Battlezone {
     }
 
     renderEnemy(ctx, screenX, screenY, scale, enemy, relX, relZ) {
-        const size = 8 * scale;
-        const height = 10 * scale;
+        // screenY is the projected ground level — draw tank body upward from here
+        const size = Math.min(8 * scale, 80);
+        const height = Math.min(10 * scale, 100);
 
-        // Tank body (rectangular)
+        // Tank body — base at ground (screenY), extends upward
         ctx.beginPath();
-        ctx.rect(screenX - size, screenY - height / 2, size * 2, height);
+        ctx.rect(screenX - size, screenY - height, size * 2, height);
         ctx.stroke();
 
-        // Tank turret (triangular, pointing at player)
+        // Tank turret — mounted on upper body, points toward player
         const enemyAngleRel = Math.atan2(relX, relZ);
         const turretAngle = enemy.angle - this.player.angle - enemyAngleRel;
-        const turretLen = size * 1.5;
+        const turretLen = Math.min(size * 1.5, 60);
+        const turretBaseY = screenY - height * 0.55;
 
         ctx.beginPath();
-        ctx.moveTo(screenX, screenY);
+        ctx.moveTo(screenX, turretBaseY);
         ctx.lineTo(
             screenX + Math.sin(turretAngle) * turretLen,
-            screenY - Math.cos(turretAngle) * turretLen
+            turretBaseY - Math.cos(turretAngle) * turretLen
         );
         ctx.stroke();
 
-        // Tracks (wheels)
+        // Tracks — vertical panels along sides, full body height
         const trackOffset = size * 0.8;
         ctx.beginPath();
-        ctx.moveTo(screenX - trackOffset, screenY - height / 2);
-        ctx.lineTo(screenX - trackOffset, screenY + height / 2);
-        ctx.moveTo(screenX + trackOffset, screenY - height / 2);
-        ctx.lineTo(screenX + trackOffset, screenY + height / 2);
+        ctx.moveTo(screenX - trackOffset, screenY - height);
+        ctx.lineTo(screenX - trackOffset, screenY);
+        ctx.moveTo(screenX + trackOffset, screenY - height);
+        ctx.lineTo(screenX + trackOffset, screenY);
         ctx.stroke();
     }
 
     renderBullet(ctx, screenX, screenY, scale) {
-        const size = 2 * scale;
-        ctx.globalAlpha = 0.8;
+        const size = Math.min(2 * scale, 8);
+        ctx.fillStyle = '#0f0';
+        ctx.globalAlpha = 0.9;
         ctx.beginPath();
         ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
         ctx.fill();
@@ -619,7 +684,7 @@ class Battlezone {
     }
 
     renderEnemyBullet(ctx, screenX, screenY, scale) {
-        const size = 2 * scale;
+        const size = Math.min(2 * scale, 8);
         ctx.globalAlpha = 0.6;
         ctx.strokeStyle = '#f00';
         ctx.beginPath();
@@ -724,11 +789,12 @@ class Battlezone {
         this.update(deltaTime);
         this.render();
 
+        window.frameCount = (window.frameCount || 0) + 1;
         requestAnimationFrame(() => this.gameLoop());
     }
 }
 
 // Start game when page loads
 window.addEventListener('load', () => {
-    new Battlezone();
+    window.game = new Battlezone();
 });
