@@ -68,9 +68,9 @@ After deploying, you can add a custom domain in your platform's settings.
 |------|------------------------------|----------------------------|
 | Galaga | ✅ | ✅ |
 | Berzerk | ✅ | ✅ |
-| Pac-Man | ✅ | ✅ |
 | Space Invaders | ✅ | ✅ |
-| Frogger | ✅ | ✅ |
+| Missile Command | ✅ | ✅ |
+| Battlezone | ✅ | ✅ |
 | Asteroids (Desktop) | ❌ | ✅ |
 | Asteroids (Mobile) | ❌ | ✅ |
 

@@ -1,5 +1,7 @@
 # Turn-Based Multiplayer Implementation Guide
 
+> **Note (Oct 2026):** Frogger and Pac-Man have since been removed from the portal; their sections below are historical.
+
 This document summarizes the turn-based multiplayer system implemented across all classic arcade games.
 
 ## Games Completed
